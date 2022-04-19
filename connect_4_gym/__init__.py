@@ -1,5 +1,5 @@
 from gym.envs.registration import register
-from .envs.connect_four_env import ConnectFourEnv, Player, RandomPlayer, SavedPlayer, ResultType
+from .envs.connect_four_env import ConnectFourEnv
 
 register(
     id='Connect4',
