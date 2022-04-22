@@ -29,14 +29,15 @@ class ConnectFourEnv(gym.Env):
     # returns winning player where player is as represented in the __board. Player is None if
     # there is no winner
     def check_victory(self):
+        # checks rows and columns
         for board in [self.__board, np.transpose(self.__board)]:
-
-            # checks rows
             for i in range(board.shape[0]):
                 result = self._check_row(board[i])
                 if result is not None:
                     return result
-            # checks diagonal
+
+        # checks diagonals
+        for board in [self.__board, np.rot90(self.__board)]:
             for k in range(-board.shape[0] + 1, board.shape[1]):
                 diagonal = np.diag(board, k=k)
                 if len(diagonal >= self.win_req):
@@ -44,6 +45,7 @@ class ConnectFourEnv(gym.Env):
                     if result is not None:
                         return result
 
+    # checks for consecutive pieces from the same player where 0 is empty
     def _check_row(self, row):
         player = 0
         consecutive_count = 0
