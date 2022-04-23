@@ -7,6 +7,10 @@ from scipy.ndimage import rotate
 class ConnectFourEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
+    WIN_REWARD = 1
+    DRAW_REWARD = 0
+    LOSS_REWARD = -1
+
     def __init__(self, board_shape=(6, 7), window_width=512, window_height=512):
         super(ConnectFourEnv, self).__init__()
         self.win_req = 4
@@ -25,6 +29,25 @@ class ConnectFourEnv(gym.Env):
         self.__window_width = window_width
         self.__window_height = window_height
         self.__rendered_board = self._update_board_render()
+
+    # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
+    # game has not ended
+    def step(self, action):
+        self.insert_into_column(action)
+        winning_player = self.check_victory()
+        if winning_player is not None:
+            if winning_player == self.__current_player:
+                reward = self.WIN_REWARD
+            else:
+                reward = self.LOSS_REWARD
+        else:
+            if len(self.get_allowed_moves()) == 0:
+                reward = self.DRAW_REWARD
+            else:
+                reward = None
+        return self.__board.copy(), reward
+
+
 
     # returns winning player where player is as represented in the __board. Player is None if
     # there is no winner
@@ -65,8 +88,8 @@ class ConnectFourEnv(gym.Env):
             if self.__board[i][column] == 0:
                 self.__board[i][column] = self.__current_player
                 return
-            
+
     def get_allowed_moves(self):
-        return np.nonzero(self.__board[0])
+        return np.nonzero(self.__board[0] == 0)
 
 
