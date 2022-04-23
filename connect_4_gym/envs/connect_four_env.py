@@ -19,7 +19,7 @@ class ConnectFourEnv(gym.Env):
     DRAW_REWARD = 0
     LOSS_REWARD = -1
 
-    def __init__(self, board_shape=(7, 6), screen_size=512):
+    def __init__(self, board_shape=(6, 7), screen_size=512):
 
         super(ConnectFourEnv, self).__init__()
         self.win_req = 4
@@ -153,15 +153,15 @@ class ConnectFourEnv(gym.Env):
         longer_board_axis = max(self.board.shape)
         grid_square_size = self.screen_size // (longer_board_axis)
 
-        if self.board.shape[0] > self.board.shape[1]:
-            x_offset = (self.screen_size - (self.board.shape[1] * grid_square_size))//2
+        if self.board.shape[1] > self.board.shape[0]:
+            x_offset = (self.screen_size - (self.board.shape[0] * grid_square_size))//2
             y_offset = 0
         else:
-            y_offset = (self.screen_size - (self.board.shape[0] * grid_square_size))//2
+            y_offset = (self.screen_size - (self.board.shape[1] * grid_square_size))//2
             x_offset = 0
 
-        for y, row in enumerate(self.board):
-            for x, grid_square in enumerate(row):
+        for x, row in enumerate(self.board):
+            for y, grid_square in enumerate(row):
                 filled_colors = {
                     -1: Colors.RED.value,
                     1 : Colors.BLUE.value,
@@ -178,7 +178,7 @@ class ConnectFourEnv(gym.Env):
                 pygame.draw.circle(surface, Colors.BLACK.value, grid_square_center, 0.4*grid_square_size, width=1)
 
         pygame.draw.rect(surface, Colors.BLACK.value, 
-            [y_offset, x_offset, self.board.shape[0]*grid_square_size, self.board.shape[1]*grid_square_size], 1)
+            [y_offset, x_offset, self.board.shape[1]*grid_square_size, self.board.shape[0]*grid_square_size], 1)
     
         self.screen.blit(surface, (0,0))
         pygame.display.update()
