@@ -65,5 +65,8 @@ class ConnectFourEnv(gym.Env):
             if self.__board[i][column] == 0:
                 self.__board[i][column] = self.__current_player
                 return
+            
+    def get_allowed_moves(self):
+        return np.nonzero(self.__board[0])
 
 
