@@ -1,8 +1,10 @@
 import gym
 from gym import spaces
 import numpy as np
+import pygame
 from scipy.ndimage import rotate
-from player import Player
+from render import BoardView
+from time import sleep
 
 
 class ConnectFourEnv(gym.Env):
@@ -12,7 +14,8 @@ class ConnectFourEnv(gym.Env):
     DRAW_REWARD = 0
     LOSS_REWARD = -1
 
-    def __init__(self, board_shape=(6, 7), window_width=512, window_height=512):
+    def __init__(self, board_shape=(7, 6), window_width=512, window_height=512):
+
         super(ConnectFourEnv, self).__init__()
         self.win_req = 4
         self.board_shape = board_shape
@@ -22,22 +25,25 @@ class ConnectFourEnv(gym.Env):
                                             dtype=int)
         self.action_space = spaces.Discrete(board_shape[1])
 
-        self.__current_player = 1
+        self.current_player = 1
         self.__board = np.zeros(self.board_shape, dtype=int)
+        # self.__board = np.random.uniform(-1,1,(7, 6)).round()
 
         self.__player_color = 1
         self.__screen = None
         self.__window_width = window_width
         self.__window_height = window_height
-        self.__rendered_board = self._update_board_render()
 
-    def run(self, player1: Player, player2, board, render=False):
+    def run(self):
         # make reset function
-        finished = False
-
-        while not finished:
-            current_player = player1 if self.__current_player == 1 else player2
-            action = player1.
+        while True:
+            action = np.random.choice(self.get_allowed_moves())
+            reward = self.step(action)
+            if reward is None:
+                self.current_player *= -1
+            else:
+                break
+        return self.current_player, reward
 
 
     # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
@@ -46,7 +52,7 @@ class ConnectFourEnv(gym.Env):
         self.insert_into_column(action)
         winning_player = self.check_victory()
         if winning_player is not None:
-            if winning_player == self.__current_player:
+            if winning_player == self.current_player:
                 reward = self.WIN_REWARD
             else:
                 reward = self.LOSS_REWARD
@@ -96,10 +102,56 @@ class ConnectFourEnv(gym.Env):
         assert(self.__board[0][column] == 0)
         for i in reversed(range(self.board_shape[0])):
             if self.__board[i][column] == 0:
-                self.__board[i][column] = self.__current_player
+                self.__board[i][column] = self.current_player
                 return
 
     def get_allowed_moves(self):
         return np.nonzero(self.__board[0] == 0)
 
+    def render(self, mode="human", close=False):
+        if mode == 'console':
+            replacements = {
+                self.__player_color: 'A',
+                0: ' ',
+                -1 * self.__player_color: 'B'
+            }
+
+            def render_line(line):
+                return "|" + "|".join(
+                    ["{:>2} ".format(replacements[x]) for x in line]) + "|"
+
+            hline = '|---+---+---+---+---+---+---|'
+            print(hline)
+            for line in np.apply_along_axis(render_line,
+                                            axis=1,
+                                            arr=self.__board):
+                print(line)
+            print(hline)
+
+        elif mode == 'human':
+            if self.__screen is None:
+                pygame.init()
+                self.__screen = pygame.display.set_mode(
+                    (round(self.__window_width), round(self.__window_height)))
+
+            if close:
+                pygame.quit()
+
+            board_view = BoardView(self.__board, self.__window_width)
+            board_view.draw(self.__screen)
+            pygame.display.update()
+
+if __name__=="__main__":
+    env = ConnectFourEnv()
+    env.render()
+    while True:
+        action = np.random.choice(env.get_allowed_moves()[0])
+        reward = env.step(action)
+        if reward is None:
+            env.current_player *= -1
+            env.render()
+            sleep(1)
+        else:
+            env.render()
+            sleep(1)
 
