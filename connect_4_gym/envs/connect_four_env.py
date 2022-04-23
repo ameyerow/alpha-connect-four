@@ -196,5 +196,4 @@ if __name__=="__main__":
             sleep(1)
         else:
             env.render()
-            sleep(1)
 
