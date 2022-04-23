@@ -57,3 +57,13 @@ class ConnectFourEnv(gym.Env):
                 consecutive_count = 1
             if player != 0 and consecutive_count == self.win_req:
                 return player
+
+    # assumes action is valid; TODO: add move rejection for human players
+    def insert_into_column(self, column):
+        assert(self.__board[0][column] == 0)
+        for i in reversed(range(self.board_shape[0])):
+            if self.__board[i][column] == 0:
+                self.__board[i][column] = self.__current_player
+                return
+
+
