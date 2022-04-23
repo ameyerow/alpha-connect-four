@@ -2,6 +2,7 @@ import gym
 from gym import spaces
 import numpy as np
 from scipy.ndimage import rotate
+from player import Player
 
 
 class ConnectFourEnv(gym.Env):
@@ -29,6 +30,15 @@ class ConnectFourEnv(gym.Env):
         self.__window_width = window_width
         self.__window_height = window_height
         self.__rendered_board = self._update_board_render()
+
+    def run(self, player1: Player, player2, board, render=False):
+        # make reset function
+        finished = False
+
+        while not finished:
+            current_player = player1 if self.__current_player == 1 else player2
+            action = player1.
+
 
     # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
     # game has not ended
