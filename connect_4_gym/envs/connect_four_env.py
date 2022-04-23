@@ -1,7 +1,10 @@
 import gym
 from gym import spaces
 import numpy as np
+import pygame
 from scipy.ndimage import rotate
+from render import BoardView
+from time import sleep
 
 
 class ConnectFourEnv(gym.Env):
@@ -11,7 +14,8 @@ class ConnectFourEnv(gym.Env):
     DRAW_REWARD = 0
     LOSS_REWARD = -1
 
-    def __init__(self, board_shape=(6, 7), window_width=512, window_height=512):
+    def __init__(self, board_shape=(7, 6), window_width=512, window_height=512):
+
         super(ConnectFourEnv, self).__init__()
         self.win_req = 4
         self.board_shape = board_shape
@@ -23,12 +27,12 @@ class ConnectFourEnv(gym.Env):
 
         self.__current_player = 1
         self.__board = np.zeros(self.board_shape, dtype=int)
+        # self.__board = np.random.uniform(-1,1,(7, 6)).round()
 
         self.__player_color = 1
         self.__screen = None
         self.__window_width = window_width
         self.__window_height = window_height
-        self.__rendered_board = self._update_board_render()
 
     # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
     # game has not ended
@@ -91,5 +95,44 @@ class ConnectFourEnv(gym.Env):
 
     def get_allowed_moves(self):
         return np.nonzero(self.__board[0] == 0)
+
+    def render(self, mode="human", close=False):
+        if mode == 'console':
+            replacements = {
+                self.__player_color: 'A',
+                0: ' ',
+                -1 * self.__player_color: 'B'
+            }
+
+            def render_line(line):
+                return "|" + "|".join(
+                    ["{:>2} ".format(replacements[x]) for x in line]) + "|"
+
+            hline = '|---+---+---+---+---+---+---|'
+            print(hline)
+            for line in np.apply_along_axis(render_line,
+                                            axis=1,
+                                            arr=self.__board):
+                print(line)
+            print(hline)
+
+        elif mode == 'human':
+            if self.__screen is None:
+                pygame.init()
+                self.__screen = pygame.display.set_mode(
+                    (round(self.__window_width), round(self.__window_height)))
+
+            if close:
+                pygame.quit()
+
+            board_view = BoardView(self.__board, self.__window_width)
+            board_view.draw(self.__screen)
+            pygame.display.update()
+
+if __name__=="__main__":
+    env = ConnectFourEnv()
+    env.render()
+    while True:
+        pass
 
 
