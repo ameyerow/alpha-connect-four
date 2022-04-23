@@ -39,6 +39,18 @@ class ConnectFourEnv(gym.Env):
         self.clock = None
         self.screen_size = screen_size
 
+    def run(self):
+        # make reset function
+        while True:
+            action = np.random.choice(self.get_allowed_moves())
+            reward = self.step(action)
+            if reward is None:
+                self.current_player *= -1
+            else:
+                break
+        return self.current_player, reward
+
+
     # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
     # game has not ended
     def step(self, action):
@@ -50,7 +62,7 @@ class ConnectFourEnv(gym.Env):
             else:
                 reward = self.LOSS_REWARD
         else:
-            if len(self.__get_allowed_moves()) == 0:
+            if len(self.get_allowed_moves()) == 0:
                 reward = self.DRAW_REWARD
             else:
                 reward = None
@@ -98,7 +110,7 @@ class ConnectFourEnv(gym.Env):
                 self.board[i][column] = self.current_player
                 return
 
-    def __get_allowed_moves(self):
+    def get_allowed_moves(self):
         return np.nonzero(self.board[0] == 0)
 
     def render(self, mode="human", close=False):
@@ -176,6 +188,13 @@ if __name__=="__main__":
     env = ConnectFourEnv()
     env.render()
     while True:
-        pass
-
+        action = np.random.choice(env.get_allowed_moves()[0])
+        reward = env.step(action)
+        if reward is None:
+            env.current_player *= -1
+            env.render()
+            sleep(1)
+        else:
+            env.render()
+            sleep(1)
 
