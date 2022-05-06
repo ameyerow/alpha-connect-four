@@ -184,16 +184,22 @@ class ConnectFourEnv(gym.Env):
         pygame.display.update()
         self.clock.tick(self.metadata["render_fps"])
 
+    def reset_env(self):
+        self.board_shape = np.zeros(self.board_shape, dtype=int)
+        self.current_player = 1
+
 if __name__=="__main__":
     env = ConnectFourEnv()
     env.render()
     while True:
         action = np.random.choice(env.get_allowed_moves()[0])
-        reward = env.step(action)
+        board, reward = env.step(action)
         if reward is None:
             env.current_player *= -1
             env.render()
             sleep(1)
         else:
+            print(reward)
             env.render()
+            sleep(100000)
 
