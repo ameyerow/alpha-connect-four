@@ -93,6 +93,22 @@ class ConnectFourEnv(gym.Env):
                     if result is not None:
                         return result
 
+    def check_victory(self, board):
+        for b in [board, np.transpose(board)]:
+            for i in range(b.shape[0]):
+                result = self.__check_row(b[i])
+                if result is not None:
+                    return result
+
+        # checks diagonals
+        for b in [board, np.rot90(board)]:
+            for k in range(-b.shape[0] + 1, b.shape[1]):
+                diagonal = np.diag(b, k=k)
+                if len(diagonal >= self.win_req):
+                    result = self.__check_row(diagonal)
+                    if result is not None:
+                        return result
+
     # checks for consecutive pieces from the same player where 0 is empty
     def __check_row(self, row):
         player = 0
@@ -112,6 +128,12 @@ class ConnectFourEnv(gym.Env):
         for i in reversed(range(self.board_shape[0])):
             if self.board[i][column] == 0:
                 self.board[i][column] = self.current_player
+                return
+
+    def __insert_immutable(self, board, player, column):
+        for i in reversed(range(board.shape[0])):
+            if board[i][column] == 0:
+                board[i][column] = player
                 return
 
     # TODO: make private
