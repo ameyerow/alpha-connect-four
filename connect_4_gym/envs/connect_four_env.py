@@ -1,7 +1,6 @@
 import gym
 from gym import spaces
 import numpy as np
-from scipy.ndimage import rotate
 from time import sleep
 from enum import Enum
 
@@ -32,7 +31,6 @@ class ConnectFourEnv(gym.Env):
 
         self.current_player = 1
         self.board = np.zeros(self.board_shape, dtype=int)
-        # self.board = np.random.uniform(-1,1,(7, 6)).round()
 
         self.player_color = 1
         self.screen = None
@@ -68,7 +66,13 @@ class ConnectFourEnv(gym.Env):
                 reward = None
         return self.board.copy(), reward
 
+    # resets the board
+    def reset(self):
+        self.current_player = 1
+        self.board = np.zeros(self.board_shape, dtype=int)
 
+        self.screen = None
+        self.clock = None
 
     # returns winning player where player is as represented in the __board. Player is None if
     # there is no winner
@@ -110,6 +114,7 @@ class ConnectFourEnv(gym.Env):
                 self.board[i][column] = self.current_player
                 return
 
+    # TODO: make private
     def get_allowed_moves(self):
         return np.nonzero(self.board[0] == 0)
 
