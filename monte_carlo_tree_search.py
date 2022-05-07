@@ -1,3 +1,7 @@
+# TODO: implement pi, which should generate the sample action probabilities - it should take in a board and player
+# TODO: implement predict_move, which should select a move given board and player (and possibly env to get legal moves)
+# predict_move and pi will likely be very similar / identical in logic
+
 class Node:
     def __init__(self, prior, current_player):
         self.visitation_count = 0

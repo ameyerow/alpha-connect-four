@@ -48,6 +48,19 @@ class ConnectFourEnv(gym.Env):
                 break
         return self.current_player, reward
 
+    def run_game(self, player1, player2):
+        self.reset()
+        players = [None, player1, player2]
+        while True:
+            # TODO: Consider what arguments a player needs to play the game - may need to move 'move' and 'check_winner' functions from here to the players
+            action = np.random.choice(players[self.current_player](self.board, self.current_player))
+            reward = self.step(action)
+            if reward is None:
+                self.current_player *= -1
+            else:
+                break
+        return self.current_player, reward
+
 
     # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
     # game has not ended
@@ -93,6 +106,7 @@ class ConnectFourEnv(gym.Env):
                     if result is not None:
                         return result
 
+    # checks victory on a given board
     def check_victory(self, board):
         for b in [board, np.transpose(board)]:
             for i in range(b.shape[0]):
@@ -130,11 +144,13 @@ class ConnectFourEnv(gym.Env):
                 self.board[i][column] = self.current_player
                 return
 
-    def __insert_immutable(self, board, player, column):
+    # Immutably inserts a piece into a board, i.e. returns a new board
+    def move(self, board, player, column):
+        board = board.copy()
         for i in reversed(range(board.shape[0])):
             if board[i][column] == 0:
                 board[i][column] = player
-                return
+                return board
 
     # TODO: make private
     def get_allowed_moves(self):
