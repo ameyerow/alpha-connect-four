@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import numpy as np
 
 
 class ConnectFourModel(nn.Module):
@@ -11,12 +12,10 @@ class ConnectFourModel(nn.Module):
         self.pi2 = torch.nn.Softmax()
         self.values1 = torch.nn.Linear(42, 1)
         self.values2 = torch.nn.Tanh()
-        self.pi = None
-        self.values = None
 
     def forward(self, X):
         pi_outputs = self.pi1(X)
-        self.pi = self.pi2(pi_outputs)
+        pi_outputs = self.pi2(pi_outputs)
         values_outputs = self.values1(X)
-        self.values = self.values(values_outputs)
-
+        values_outputs = self.values(values_outputs)
+        return pi_outputs, values_outputs
