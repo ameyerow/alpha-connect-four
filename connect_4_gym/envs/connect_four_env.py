@@ -18,10 +18,10 @@ class ConnectFourEnv(gym.Env):
     DRAW_REWARD = 0
     LOSS_REWARD = -1
 
-    def __init__(self, board_shape=(6, 7), screen_size=512):
+    def __init__(self, board_shape=(6, 7), win_req=4, screen_size=512):
 
         super(ConnectFourEnv, self).__init__()
-        self.win_req = 4
+        self.win_req = win_req
         self.board_shape = board_shape
         self.observation_space = spaces.Box(low=-1,
                                             high=1,
@@ -40,7 +40,7 @@ class ConnectFourEnv(gym.Env):
     def run(self):
         # make reset function
         while True:
-            action = np.random.choice(self.get_allowed_moves())
+            action = np.random.choice(self.__get_allowed_moves())
             reward = self.step(action)
             if reward is None:
                 self.current_player *= -1
@@ -73,11 +73,15 @@ class ConnectFourEnv(gym.Env):
             else:
                 reward = self.LOSS_REWARD
         else:
-            if len(self.get_allowed_moves()) == 0:
+            if len(self.__get_allowed_moves()) == 0:
                 reward = self.DRAW_REWARD
             else:
+                self.current_player *= -1
                 reward = None
-        return self.board.copy(), reward
+        done = reward is not None
+        info = None
+
+        return self.board.copy(), reward, done, info
 
     # resets the board
     def reset(self):
@@ -101,23 +105,6 @@ class ConnectFourEnv(gym.Env):
         for board in [self.board, np.rot90(self.board)]:
             for k in range(-board.shape[0] + 1, board.shape[1]):
                 diagonal = np.diag(board, k=k)
-                if len(diagonal >= self.win_req):
-                    result = self.__check_row(diagonal)
-                    if result is not None:
-                        return result
-
-    # checks victory on a given board
-    def check_victory(self, board):
-        for b in [board, np.transpose(board)]:
-            for i in range(b.shape[0]):
-                result = self.__check_row(b[i])
-                if result is not None:
-                    return result
-
-        # checks diagonals
-        for b in [board, np.rot90(board)]:
-            for k in range(-b.shape[0] + 1, b.shape[1]):
-                diagonal = np.diag(b, k=k)
                 if len(diagonal >= self.win_req):
                     result = self.__check_row(diagonal)
                     if result is not None:
@@ -152,7 +139,9 @@ class ConnectFourEnv(gym.Env):
                 board[i][column] = player
                 return board
 
-    # TODO: make private
+    def __get_allowed_moves(self):
+        return np.nonzero(self.board[0] == 0)
+    
     def get_allowed_moves(self):
         return np.nonzero(self.board[0] == 0)
 
@@ -232,17 +221,15 @@ class ConnectFourEnv(gym.Env):
         self.current_player = 1
 
 if __name__=="__main__":
-    env = ConnectFourEnv()
+    env = ConnectFourEnv(board_shape=(1,4), win_req=2)
     env.render()
     while True:
-        action = np.random.choice(env.get_allowed_moves()[0])
-        board, reward = env.step(action)
-        if reward is None:
-            env.current_player *= -1
-            env.render()
-            sleep(1)
-        else:
-            print(reward)
-            env.render()
-            sleep(100000)
+        allowed_moves = env.get_allowed_moves()[0]
+        action = np.random.choice(allowed_moves)
+        _, _, done, _ = env.step(action)
+        env.render()
+        sleep(1)
+        
+        if done:
+            env.reset()
 
