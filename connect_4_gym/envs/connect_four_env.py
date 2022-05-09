@@ -53,7 +53,12 @@ class ConnectFourEnv(gym.Env):
         players = [None, player1, player2]
         while True:
             # TODO: Consider what arguments a player needs to play the game - may need to move 'move' and 'check_winner' functions from here to the players
-            action = np.random.choice(players[self.current_player](self.board, self.current_player))
+            current_player = players[self.current_player]
+            # Always want to consider the board from the "perspective" of player 1, so flip the board if we are player2
+            action_probs = current_player.forward(self.current_player * self.board)
+            # TODO: Some actions the player assigns probability may in fact be impossible moves. We must compare this with the available moves and 
+            # redistribute the probabilities accordingly
+            action = np.random.choice(action_probs)
             reward = self.step(action)
             if reward is None:
                 self.current_player *= -1
@@ -79,7 +84,7 @@ class ConnectFourEnv(gym.Env):
                 self.current_player *= -1
                 reward = None
         done = reward is not None
-        info = None
+        info = {}
 
         return self.board.copy(), reward, done, info
 
@@ -140,10 +145,14 @@ class ConnectFourEnv(gym.Env):
                 return board
 
     def __get_allowed_moves(self):
-        return np.nonzero(self.board[0] == 0)
+        moves = np.nonzero(self.board[0] == 0)
+        return moves[0]
     
     def get_allowed_moves(self):
-        return np.nonzero(self.board[0] == 0)
+        return self.__get_allowed_moves()
+
+    def is_legal_action(self, action) -> bool:
+        return action in self.__get_allowed_moves()
 
     def render(self, mode="human", close=False):
         if mode == 'console':
@@ -221,10 +230,10 @@ class ConnectFourEnv(gym.Env):
         self.current_player = 1
 
 if __name__=="__main__":
-    env = ConnectFourEnv(board_shape=(1,4), win_req=2)
+    env = ConnectFourEnv(board_shape=(6,7), win_req=4)
     env.render()
     while True:
-        allowed_moves = env.get_allowed_moves()[0]
+        allowed_moves = env.get_allowed_moves()
         action = np.random.choice(allowed_moves)
         _, _, done, _ = env.step(action)
         env.render()
