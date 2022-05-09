@@ -34,13 +34,24 @@ class ConnectFourEnv(AdversarialEnv):
 
     @overrides
     def run(self, model, adversarial_model, state: State=None, render=False) -> Tuple[Any, float]:
-        if state is None:
-            state = self.state
-
         def render_if_enabled(state_to_render):
             if render:
                 sleep(1)
                 self.render(state=state_to_render)
+        
+        if state is None:
+            state = self.state
+        
+        # Check that the state is not already terminal, if it is return the current player
+        # and the correct reward
+        winning_player =  self.__check_victory(state)
+        if winning_player is not None:
+            modifier = 1 if winning_player == state.current_player else -1
+            reward = self.WIN_REWARD * modifier
+            return state.current_player, reward
+        elif len(self.__get_allowed_moves(state)) == 0:
+            reward = self.DRAW_REWARD
+            return state.current_player, reward
 
         render_if_enabled(state)
         players = [None, model, adversarial_model]
@@ -54,8 +65,8 @@ class ConnectFourEnv(AdversarialEnv):
                 if not self.is_legal_action(action, state=state):
                     action_probs[action] = 0
             prob_sum = np.sum(action_probs)
-            if prob_sum == 0:
-                action_probs = np.ones(env.action_space_shape) / len(action_probs) # TODO: maybe change divisor
+            if prob_sum == 0: # TODO: this should probably never happen, bug if it does
+                action_probs = np.ones(self.action_space_shape) / len(action_probs) # TODO: maybe change divisor
             else:
                 action_probs /= np.sum(action_probs)
 

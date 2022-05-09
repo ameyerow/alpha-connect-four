@@ -1,3 +1,4 @@
+from copy import deepcopy
 import math
 import numpy as np
 from typing import List
@@ -49,7 +50,7 @@ class Node:
             if not env.is_legal_action(action, state=self.state):
                 continue
             next_state = env.perform_action_on_state(self.state, action)
-            child_node = Node(self, action_prob, next_state)
+            child_node = Node(action, self, action_prob, next_state)
             self.children.append(child_node)
             
     def rollout(self, model, env: AdversarialEnv) -> float:
@@ -62,7 +63,7 @@ class Node:
         param env: The environment of the game.
         return: The value at the terminal state from the perspective of the current node.
         """
-        terminal_player, value = env.run(model, model, state=self.state)
+        terminal_player, value = env.run(model, model, state=deepcopy(self.state))
         if terminal_player != self.state.current_player:
             value *= -1
         return value
@@ -117,7 +118,7 @@ class MCTS:
             # Find a leaf node
             curr_node = self.root_node
             while curr_node.children:
-                ucb_scores = np.fromiter(UCB1(node, curr_node.visitation_count) for node in curr_node.children)
+                ucb_scores = np.fromiter((UCB1(node, curr_node.visitation_count) for node in curr_node.children), np.float64)
                 maximizing_child_idx = np.argmax(ucb_scores)
                 curr_node = curr_node.children[maximizing_child_idx]
 
