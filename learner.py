@@ -1,14 +1,14 @@
 import numpy as np
 import torch
+from adversarial_env import AdversarialEnv, State
 from monte_carlo_tree_search import MCTS
-from connect_4_gym import ConnectFourEnv
 import random
 import torch.nn as nn
 
 
 class Learner:
 
-    def __init__(self, env: ConnectFourEnv, cur_model, next_model, num_episodes, test_games=50):
+    def __init__(self, env: AdversarialEnv, cur_model, next_model, num_episodes, test_games=50):
         self.env = env
         self.cur_model = cur_model
         self.next_model = next_model
@@ -21,8 +21,8 @@ class Learner:
         self.env.reset()
         examples = []
         while True:
-            current_player = self.env.current_player
-            board_state = self.env.board
+            current_player = self.env.state.current_player
+            board_state = self.env.state.board
 
             self.mcts = MCTS(self.env, self.cur_model)
             pi = self.mcts.pi(board_state, current_player)
@@ -30,9 +30,9 @@ class Learner:
             action = np.random.choice(len(pi), p=pi)
 
             # reward for the player who placed the last piece
-            next_board, reward = self.env.step(action)
+            reward, done = self.env.step(action)
 
-            if reward is None:
+            if not done:
                 self.env.current_player *= -1
             else:
                 boards = []
@@ -72,9 +72,9 @@ class Learner:
         # + for net cur_model_mcts victories, - for net next_model_mcts victories
         score = 0
         for i in range(int(self.test_games / 2)):
-            player, reward = self.env.run_game(cur_model_mcts.predict_move, next_model_mcts.predict_move)
+            player, reward = self.env.run(cur_model_mcts.predict_move, next_model_mcts.predict_move)
             score += player * reward
-            player, reward = self.env.run_game(next_model_mcts.predict_move, cur_model_mcts.predict_move)
+            player, reward = self.env.run(next_model_mcts.predict_move, cur_model_mcts.predict_move)
             score -= player * reward
 
         if score > 0:

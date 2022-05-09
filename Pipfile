@@ -11,8 +11,8 @@ quadprog = "==0.1.11"
 scikit-learn = "==1.0.2"
 torch = "==1.10.1"
 Pillow = "==9.0.0"
-gym = "*"
 pygame = "*"
+overrides = "*"
 
 [dev-packages]
 pylint = "*"
