@@ -146,6 +146,9 @@ class MCTS:
             action_probs /= np.sum(action_probs)
         return action_probs
 
+    def value(self) -> float:
+        return self.root_node.total_value / self.root_node.visitation_count
+
     def predict_move(self) -> int:
         """
         Select a move given the environment and the results of running MCTS. 

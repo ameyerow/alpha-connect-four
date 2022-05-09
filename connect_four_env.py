@@ -220,7 +220,7 @@ if __name__=="__main__":
         def forward(self, board: np.array):
             return np.ones([board.shape[1]])/board.shape[1], 0.0001
 
-    env = ConnectFourEnv(board_shape=(6,7), win_req=4)
+    env = ConnectFourEnv(board_shape=(1,4), win_req=2)
     num_games_to_play = 10
     for _ in range(num_games_to_play):
         env.run(MockModel(), MockModel(), render=True)

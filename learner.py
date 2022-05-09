@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from adversarial_env import AdversarialEnv, State
+from connect_four_env import ConnectFourEnv
 from monte_carlo_tree_search import MCTS
 import random
 import torch.nn as nn
@@ -70,6 +71,18 @@ class Learner:
         next_model_mcts = MCTS(self.env, self.next_model)
 
         # + for net cur_model_mcts victories, - for net next_model_mcts victories
+        class MCTSLearner:
+            def __init__(self, model):
+                self.model = model
+
+            def forward(self, X):
+                current_player
+                env = ConnectFourEnv()
+                env.state = State(X, current_player)
+                mcts = MCTS(env, self.model)
+                mcts.run()
+                return mcts.pi(), mcts.value()
+
         score = 0
         for i in range(int(self.test_games / 2)):
             player, reward = self.env.run(cur_model_mcts.predict_move, next_model_mcts.predict_move)
