@@ -1,19 +1,30 @@
 import abc
-import numpy as np
+from numpy import ndarray
 from typing import Any, Tuple
-from collections import namedtuple
 
 class State:
     def __init__(self, board, current_player):
+        """
+        param board: The board of the game.
+        param current_player: The current player of the game.
+        """
         self.board = board
         self.current_player = current_player
 
 class AdversarialEnv(metaclass=abc.ABCMeta):
-    def __init__(self, state):
+    def __init__(self, state: State, action_space_shape, observation_space_shape):
+        """
+        param state: The current state of the environment, containing a board and a current
+            player.
+        param action_space_shape: The shape of the action space.
+        param observation_space_shape: The shape of the observation space.
+        """
         self.state: State = state
+        self.action_space_shape = action_space_shape
+        self.observation_space_shape = observation_space_shape
 
     @abc.abstractmethod
-    def observation(self, state: State=None) -> np.array:
+    def observation(self, state: State=None) -> ndarray:
         """
         Given the state of the environment, return the observation of the board from the 
         perspective of the current player. This essentially means that the board should

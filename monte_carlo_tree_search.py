@@ -1,19 +1,21 @@
-from ast import Pass
-from copy import copy
 import math
-from typing import List
 import numpy as np
-
+from typing import List
+from numpy import ndarray
 from adversarial_env import AdversarialEnv, State
 
-# TODO: implement pi, which should generate the sample action probabilities - it should take in a board and player
-# TODO: implement predict_move, which should select a move given board and player (and possibly env to get legal moves)
-# predict_move and pi will likely be very similar / identical in logic
 
 class Node:
-    def __init__(self, parent, prior, state):
-        self.prior: float = prior
+    def __init__(self, action: int, parent, prior: float, state: State):
+        """
+        param action: The action taken on the parent Node to arrive at this state.
+        param parent: The parent node.
+        param prior: The action probability associated with arriving at this node from the parent node.
+        param state: The environment state associated with this node.
+        """
+        self.action: int = action
         self.parent: Node = parent
+        self.prior: float = prior
         self.state: State = state
 
         self.visitation_count: int = 0
@@ -31,40 +33,53 @@ class Node:
         param env: The environment of the game.
         """
         action_probs, _ = model.forward(self.state)
-        # TODO: balance probabilities based on some actions being illegal
-        # if not env.is_legal_action(self.state, action):
 
+        # Balance probabilities based on some actions being illegal
+        for action in range(len(action_probs)):
+            if not env.is_legal_action(self.state, action):
+                action_probs[action] = 0
+        prob_sum = np.sum(action_probs)
+        if prob_sum == 0:
+            action_probs = np.ones(env.action_space_shape) / len(action_probs) # TODO: maybe change divisor
+        else:
+            action_probs /= np.sum(action_probs)
+
+        # Create a child node for each legal state
         for action, action_prob in enumerate(action_probs):
+            if not env.is_legal_action(self.state, action):
+                continue
             next_state = env.perform_action_on_state(self.state, self.current_player, action)
             child_node = Node(self, action_prob, next_state)
             self.children.append(child_node)
             
-    def rollout(self, model) -> float:
+    def rollout(self, model, env: AdversarialEnv) -> float:
         """
         Plays game forward from current state until arriving at some terminal state.
 
-        param model:
-
-        return:
+        param model: An object (theoretically some pytorch model) whose forward function takes in a 
+            current board state and returns a probability distribution over the action space and predicted 
+            value for the terminal state.
+        param env: The environment of the game.
+        return: The value at the terminal state from the perspective of the current node.
         """
-        terminal_player, reward = self.state.run(model, model)
+        terminal_player, value = env.run(model, state=self.state)
         if terminal_player != self.current_player:
-            reward *= -1
-        return reward
+            value *= -1
+        return value
 
     def backup(self, value: float):
         """
         Propogates the value of some terminal state (the result of a rollout) up the tree 
         through the parent pointers.
 
-        param value:
-
+        param value: The value to propogate up the tree.
         """
         self.total_value += value
         self.visitation_count += 1
         # Flips the value when calling backup because a positive reward for the current player is
         # a negative reward for the opposing player
-        self.parent.backup(-value)
+        if self.parent is not None:
+            self.parent.backup(-value)
 
 def UCB1(node: Node, parent_visitation_count: int, C: float = 2.0) -> float:
     """
@@ -84,11 +99,62 @@ def UCB1(node: Node, parent_visitation_count: int, C: float = 2.0) -> float:
     return average_value + node.prior * C * math.sqrt(visitation_ratio)
 
 class MCTS:
-    def __init__(self, env, model):
-        pass
+    def __init__(self, env: AdversarialEnv, model, num_simulations=50):
+        """
+        param model: An object (theoretically some pytorch model) whose forward function takes in a 
+            current board state and returns a probability distribution over the action space and predicted 
+            value for the terminal state.
+        param env: The environment of the game.
+        param num_simulations: The number of simulations to go through in the run function.
+        """
+        self.env = env
+        self.model = model
+        self.num_simulations = num_simulations
+        self.root_node = Node(None, 1, self.env.state)
+    
+    def run(self):
+        for _ in range(self.num_simulations):
+            # Find a leaf node
+            curr_node = self.root_node
+            while curr_node.children:
+                ucb_scores = np.fromiter(UCB1(node, curr_node.visitation_count) for node in curr_node.children)
+                maximizing_child_idx = np.argmax(ucb_scores)
+                curr_node = curr_node.children[maximizing_child_idx]
 
-    def pi(self):
-        pass
+            # If the current node has never been visited, rollout from it and backup the value.
+            # Otherwise expand the current node.
+            if curr_node.visitation_count == 0:
+                value = curr_node.rollout(self.model, self.env)
+                curr_node.backup(value)
+            else:
+                curr_node.expansion(self.model, self.env)
 
-    def predict_move(self):
-        pass
+    def pi(self) -> ndarray:
+        """
+        Generate a probability distribution over the action space a move given the environment and the results of running MCTS. 
+
+        return: A probability distribution over the action space. If the current state is terminal,
+            an array of all zeros will be returned.
+        """
+        action_probs = np.zeros(self.env.action_space_shape)
+        child_nodes = self.root_node.children
+        for child_node in child_nodes:
+            action = child_node.action
+            action_probs[action] = child_node.visitation_count
+        prob_sum = np.sum(action_probs)
+        if prob_sum != 0:
+            action_probs /= np.sum(action_probs)
+        return action_probs
+
+    def predict_move(self) -> int:
+        """
+        Select a move given the environment and the results of running MCTS. 
+
+        return: A sampled action based on the probability distribution generations by MCTS. If the state
+            of the environment is terminal and no actions are possible, this should return None.
+        """
+        pi = self.pi()
+        if np.sum(pi) == 0:
+            return None
+        action = np.random.choice(np.arange(self.board_shape[1]), p=pi)
+        return action

@@ -4,6 +4,7 @@ import numpy as np
 from enum import Enum
 from time import sleep
 from overrides import overrides
+from numpy import ndarray
 from adversarial_env import AdversarialEnv, State
 
 
@@ -23,10 +24,10 @@ class ConnectFourEnv(AdversarialEnv):
         self.screen_size = screen_size
 
         state = State(board=np.zeros(self.board_shape, dtype=int), current_player=1)
-        super(ConnectFourEnv, self).__init__(state)
+        super(ConnectFourEnv, self).__init__(state, (board_shape[1]), board_shape)
     
     @overrides
-    def observation(self, state: State=None) -> np.array:
+    def observation(self, state: State=None) -> ndarray:
         if state == None:
             state = self.state
         return self.state.board * self.state.current_player
@@ -46,10 +47,18 @@ class ConnectFourEnv(AdversarialEnv):
         while True:
             # TODO: Consider what arguments a player needs to play the game - may need to move 'move' and 'check_winner' functions from here to the players
             current_player = players[state.current_player]
-            # Always want to consider the board from the "perspective" of player 1, so flip the board if we are player2
             action_probs, _ = current_player.forward(self.observation(state=state))
-            # TODO: Some actions the player assigns probability may in fact be impossible moves. We must compare this with the available moves and 
-            # redistribute the probabilities accordingly
+
+            # Balance probabilities based on some actions being illegal
+            for action in range(len(action_probs)):
+                if not env.is_legal_action(self.state, action):
+                    action_probs[action] = 0
+            prob_sum = np.sum(action_probs)
+            if prob_sum == 0:
+                action_probs = np.ones(env.action_space_shape) / len(action_probs) # TODO: maybe change divisor
+            else:
+                action_probs /= np.sum(action_probs)
+
             action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
             reward, done = self.step(action, state=state)
             render_if_enabled(state)
@@ -63,25 +72,22 @@ class ConnectFourEnv(AdversarialEnv):
     # game has not ended
     @overrides
     def step(self, action, state: State=None) -> Tuple[float, bool]:
-        # TODO: clean up logic here
         if state is None:
             state = self.state
 
         self.__insert_into_column(action, state)
         winning_player = self.__check_victory(state)
-        if winning_player is not None:
-            if winning_player == state.current_player:
-                reward = self.WIN_REWARD
-            else:
-                reward = self.LOSS_REWARD
-        else:
-            if len(self.__get_allowed_moves(state)) == 0:
-                reward = self.DRAW_REWARD
-            else:
-                state.current_player *= -1
-                reward = None
-        done = reward is not None
 
+        if winning_player is not None:
+            modifier = 1 if winning_player == state.current_player else -1
+            reward = self.WIN_REWARD * modifier
+        elif len(self.__get_allowed_moves(state)) == 0:
+            reward = self.DRAW_REWARD
+        else:
+            state.current_player *= -1
+            reward = None
+
+        done = reward is not None
         return reward, done
 
     @overrides
@@ -205,7 +211,7 @@ class ConnectFourEnv(AdversarialEnv):
                 state.board[i][column] = state.current_player
                 return
 
-    def __get_allowed_moves(self, state):
+    def __get_allowed_moves(self, state: State):
         moves = np.nonzero(state.board[0] == 0)
         return moves[0]
 
