@@ -51,7 +51,7 @@ class ConnectFourEnv(AdversarialEnv):
 
             # Balance probabilities based on some actions being illegal
             for action in range(len(action_probs)):
-                if not env.is_legal_action(self.state, action):
+                if not env.is_legal_action(action, state=state):
                     action_probs[action] = 0
             prob_sum = np.sum(action_probs)
             if prob_sum == 0:
@@ -221,7 +221,8 @@ if __name__=="__main__":
             return np.ones([board.shape[1]])/board.shape[1], 0.0001
 
     env = ConnectFourEnv(board_shape=(6,7), win_req=4)
-    while True:
+    num_games_to_play = 10
+    for _ in range(num_games_to_play):
         env.run(MockModel(), MockModel(), render=True)
         env.reset()
 

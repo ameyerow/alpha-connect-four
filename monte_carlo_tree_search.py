@@ -36,7 +36,7 @@ class Node:
 
         # Balance probabilities based on some actions being illegal
         for action in range(len(action_probs)):
-            if not env.is_legal_action(self.state, action):
+            if not env.is_legal_action(action, state=self.state):
                 action_probs[action] = 0
         prob_sum = np.sum(action_probs)
         if prob_sum == 0:
@@ -46,9 +46,9 @@ class Node:
 
         # Create a child node for each legal state
         for action, action_prob in enumerate(action_probs):
-            if not env.is_legal_action(self.state, action):
+            if not env.is_legal_action(action, state=self.state):
                 continue
-            next_state = env.perform_action_on_state(self.state, self.current_player, action)
+            next_state = env.perform_action_on_state(self.state, action)
             child_node = Node(self, action_prob, next_state)
             self.children.append(child_node)
             
@@ -62,7 +62,7 @@ class Node:
         param env: The environment of the game.
         return: The value at the terminal state from the perspective of the current node.
         """
-        terminal_player, value = env.run(model, state=self.state)
+        terminal_player, value = env.run(model, model, state=self.state)
         if terminal_player != self.current_player:
             value *= -1
         return value
