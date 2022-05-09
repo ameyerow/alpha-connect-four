@@ -63,7 +63,7 @@ class Node:
         return: The value at the terminal state from the perspective of the current node.
         """
         terminal_player, value = env.run(model, model, state=self.state)
-        if terminal_player != self.current_player:
+        if terminal_player != self.state.current_player:
             value *= -1
         return value
 
@@ -110,7 +110,7 @@ class MCTS:
         self.env = env
         self.model = model
         self.num_simulations = num_simulations
-        self.root_node = Node(None, 1, self.env.state)
+        self.root_node = Node(None, None, 1, self.env.state)
     
     def run(self):
         for _ in range(self.num_simulations):

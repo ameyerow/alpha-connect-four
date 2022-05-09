@@ -28,9 +28,9 @@ class ConnectFourEnv(AdversarialEnv):
     
     @overrides
     def observation(self, state: State=None) -> ndarray:
-        if state == None:
+        if state is None:
             state = self.state
-        return self.state.board * self.state.current_player
+        return state.board * self.state.current_player
 
     @overrides
     def run(self, model, adversarial_model, state: State=None, render=False) -> Tuple[Any, float]:
@@ -51,7 +51,7 @@ class ConnectFourEnv(AdversarialEnv):
 
             # Balance probabilities based on some actions being illegal
             for action in range(len(action_probs)):
-                if not env.is_legal_action(action, state=state):
+                if not self.is_legal_action(action, state=state):
                     action_probs[action] = 0
             prob_sum = np.sum(action_probs)
             if prob_sum == 0:
@@ -92,12 +92,11 @@ class ConnectFourEnv(AdversarialEnv):
 
     @overrides
     def perform_action_on_state(self, state: State, action) -> State:
-        board, current_player = state
-        board = board.copy()
+        board = state.board.copy()
         for i in reversed(range(board.shape[0])):
             if board[i][action] == 0:
-                board[i][action] = current_player
-                return State(board=board, current_player=-current_player)
+                board[i][action] = state.current_player
+                return State(board=board, current_player=-state.current_player)
     
     @overrides
     def is_legal_action(self, action, state: State=None) -> bool:
