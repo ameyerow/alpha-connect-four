@@ -6,6 +6,7 @@ from monte_carlo_tree_search import MCTS
 from connect_four_model import ConnectFourModel
 import random
 import torch.nn as nn
+from random_model import RandomModel
 
 
 class Learner:
@@ -77,7 +78,7 @@ class Learner:
 
         cur_model_mcts = MCTS(self.env, self.cur_model)
 
-        train(self.next_model, all_boards, all_pis, all_values, batch_size=64, epochs=1000)
+        train(self.next_model, all_boards, all_pis, all_values, batch_size=64, epochs=50)
         next_model_mcts = MCTS(self.env, self.next_model)
 
         # + for net cur_model_mcts victories, - for net next_model_mcts victories
@@ -97,10 +98,12 @@ class Learner:
 
         score = 0
         for i in range(int(self.test_games / 2)):
-            player, reward = self.env.run(MCTSLearner(self.cur_model), MCTSLearner(self.next_model), render=True)
+            self.env.reset()
+            player, reward = self.env.run(self.cur_model, self.next_model)
             print(player, reward)
             score += player * reward
-            player, reward = self.env.run(MCTSLearner(self.next_model), MCTSLearner(self.cur_model), render=True)
+            self.env.reset()
+            player, reward = self.env.run(self.next_model, self.cur_model)
             print(player, reward)
             score -= player * reward
             print("playing models against each other")
@@ -109,6 +112,23 @@ class Learner:
         if score > 0:
             self.cur_model = self.next_model
             print("new model was better")
+
+    def compare_models(self, model1, model2):
+        score = 0
+        for i in range(50):
+            self.env.reset()
+            player, reward = self.env.run(model1, model2)
+            score += player * reward
+            self.env.reset()
+            player, reward = self.env.run(model2, model1)
+            score -= player * reward
+
+        print(score)
+        if score > 0:
+            print("model 1 was better")
+        else:
+            print("model 2 was better")
+        return score
 
 
 def save_checkpoint(filename, model):
@@ -162,8 +182,14 @@ def value_loss(sample_values, predicted_values):
     return loss.mean()
 
 if __name__=="__main__":
-    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 3)
-    learner.learn()
+    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 5)
+    scores = []
+    for i in range(20):
+        learner.learn()
+        score = learner.compare_models(learner.cur_model, RandomModel())
+        scores.append(score)
+    print(scores)
+    save_checkpoint("best_model", learner.cur_model)
     
 
 

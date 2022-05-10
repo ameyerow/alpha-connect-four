@@ -1,5 +1,4 @@
 from typing import Any, Tuple
-from importlib_metadata import metadata
 import numpy as np
 from enum import Enum
 from time import sleep
