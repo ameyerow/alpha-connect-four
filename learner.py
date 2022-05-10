@@ -40,9 +40,9 @@ class Learner:
             action = np.random.choice(len(pi), p=pi)
 
             # reward for the player who placed the last piece
-            winning_player = self.env.step(action)
+            winning_player, done = self.env.step(action)
 
-            if winning_player is not None:
+            if done:
                 boards = []
                 pi = []
                 values = []
