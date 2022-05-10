@@ -1,8 +1,9 @@
-from copy import deepcopy
 import math
 import numpy as np
+from copy import deepcopy
 from typing import List
 from numpy import ndarray
+from connect_four_env import ConnectFourEnv
 from adversarial_env import AdversarialEnv, State
 
 
@@ -97,7 +98,8 @@ def UCB1(node: Node, parent_visitation_count: int, C: float = 2.0) -> float:
     average_value =  node.total_value / node.visitation_count
     visitation_ratio = math.log(parent_visitation_count)/node.visitation_count
 
-    return average_value + node.prior * C * math.sqrt(visitation_ratio)
+    # The value of the children is from the perspective of the opposing player, so negate it
+    return -average_value + node.prior * C * math.sqrt(visitation_ratio)
 
 class MCTS:
     def __init__(self, env: AdversarialEnv, model, num_simulations=50):
@@ -112,7 +114,7 @@ class MCTS:
         self.model = model
         self.num_simulations = num_simulations
         self.root_node = Node(None, None, 1, self.env.state)
-    
+
     def run(self):
         for _ in range(self.num_simulations):
             # Find a leaf node
@@ -124,11 +126,14 @@ class MCTS:
 
             # If the current node has never been visited, rollout from it and backup the value.
             # Otherwise expand the current node.
-            if curr_node.visitation_count == 0:
-                value = curr_node.rollout(self.model, self.env)
-                curr_node.backup(value)
-            else:
+            if curr_node.visitation_count != 0:
                 curr_node.expansion(self.model, self.env)
+                if len(curr_node.children) > 0:
+                    curr_node = curr_node.children[0]
+
+            value = curr_node.rollout(self.model, self.env)
+            curr_node.backup(value)
+                
 
     def pi(self) -> ndarray:
         """
@@ -150,15 +155,12 @@ class MCTS:
     def value(self) -> float:
         return self.root_node.total_value / self.root_node.visitation_count
 
-    def predict_move(self) -> int:
-        """
-        Select a move given the environment and the results of running MCTS. 
 
-        return: A sampled action based on the probability distribution generations by MCTS. If the state
-            of the environment is terminal and no actions are possible, this should return None.
-        """
-        pi = self.pi()
-        if np.sum(pi) == 0:
-            return None
-        action = np.random.choice(np.arange(self.board_shape[1]), p=pi)
-        return action
+if __name__=="__main__":
+    class MockModel:
+        def forward(self, board):
+            return [0.25, 0.25, 0.25, 0.25], 0.0001
+    env = ConnectFourEnv(board_shape=(1, 4), win_req=2)
+    mcts = MCTS(env, MockModel(), num_simulations=800)
+    mcts.run()
+    print(mcts.pi())

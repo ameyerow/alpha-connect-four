@@ -11,11 +11,11 @@ class MCTSTests(unittest.TestCase):
             def forward(self, board):
                 # starting board is:
                 # [0, 0, 1, -1]
-                return np.array([0.26, 0.24, 0.24, 0.26]), 0.0001
+                return np.array([0.25, 0.25, 0.25, 0.25]), 0.0001
 
         env = ConnectFourEnv(board_shape=(1, 4), win_req=2)
         model = MockModel()
-        mcts = MCTS(env, model)
+        mcts = MCTS(env, model, num_simulations=100)
         mcts.run()
 
         # the best move is to play at index 1 or 2
