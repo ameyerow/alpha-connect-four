@@ -71,7 +71,7 @@ class ConnectFourEnv(AdversarialEnv):
             else:
                 action_probs /= np.sum(action_probs)
 
-            action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs[0])
+            action = np.random.choice(np.arange(self.board_shape[1]), p=np.reshape(action_probs, self.board_shape[1]))
             reward, done = self.step(action, state=state)
             render_if_enabled(state)
             if done:
