@@ -78,7 +78,7 @@ class Learner:
 
         cur_model_mcts = MCTS(self.env, self.cur_model)
 
-        train(self.next_model, all_boards, all_pis, all_values, batch_size=64, epochs=50)
+        train(self.next_model, all_boards, all_pis, all_values, batch_size=64, epochs=5)
         next_model_mcts = MCTS(self.env, self.next_model)
 
         # + for net cur_model_mcts victories, - for net next_model_mcts victories
@@ -89,33 +89,30 @@ class Learner:
             def forward(self, observation_board):
                 env = ConnectFourEnv()
                 env.state = State(observation_board, 1)
-                print("here")
                 mcts = MCTS(env, self.model)
-                print("there")
                 mcts.run()
-                print("anywhere")
                 return mcts.pi(), mcts.value()
 
         score = 0
         for i in range(int(self.test_games / 2)):
             self.env.reset()
             player, reward = self.env.run(self.cur_model, self.next_model)
-            print(player, reward)
             score += player * reward
             self.env.reset()
             player, reward = self.env.run(self.next_model, self.cur_model)
-            print(player, reward)
             score -= player * reward
-            print("playing models against each other")
 
-        print(score)
         if score > 0:
             self.cur_model = self.next_model
-            print("new model was better")
+            print("new model was better with a net game lead of", score, "across", self.test_games, "games")
+        elif score == 0:
+            print("new model was even with old model across", self.test_games, "games")
+        else:
+            print("new model was worse with net game losses of", score, "across", self.test_games, "games")
 
-    def compare_models(self, model1, model2):
+    def compare_models(self, model1, model2, num_iters):
         score = 0
-        for i in range(50):
+        for i in range(num_iters):
             self.env.reset()
             player, reward = self.env.run(model1, model2)
             score += player * reward
@@ -125,9 +122,9 @@ class Learner:
 
         print(score)
         if score > 0:
-            print("model 1 was better")
+            print("model 1 was better with a net game lead of", score, "across", num_iters*2, "games")
         else:
-            print("model 2 was better")
+            print("model 1 was worse with a net game loss of", score, "across", num_iters*2, "games")
         return score
 
 
@@ -182,11 +179,11 @@ def value_loss(sample_values, predicted_values):
     return loss.mean()
 
 if __name__=="__main__":
-    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 5)
+    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 3)
     scores = []
-    for i in range(20):
+    for i in range(10):
         learner.learn()
-        score = learner.compare_models(learner.cur_model, RandomModel())
+        score = learner.compare_models(learner.cur_model, RandomModel(), 100)
         scores.append(score)
     print(scores)
     save_checkpoint("best_model", learner.cur_model)
