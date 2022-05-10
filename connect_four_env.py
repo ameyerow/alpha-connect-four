@@ -6,6 +6,7 @@ from overrides import overrides
 from numpy import ndarray
 from adversarial_env import AdversarialEnv, State
 import torch
+from monte_carlo_tree_search import MCTS
 
 
 class ConnectFourEnv(AdversarialEnv):
@@ -80,6 +81,30 @@ class ConnectFourEnv(AdversarialEnv):
                 break
 
         return state.current_player, reward
+
+    def run_full_mcts(self, model, adversarial_model, state: State = None):
+        if state is None:
+            state = self.state
+        winning_player = self.__check_victory(state)
+        if winning_player is not None:
+            return winning_player
+        elif len(self.__get_allowed_moves(state)) == 0:
+            return self.DRAW_REWARD
+        models = [None, model, adversarial_model]
+        while True:
+            current_model = models[state.current_player]
+            temp_env = ConnectFourEnv(self.board_shape, self.win_req)
+            temp_env.state.board = self.state.board.copy()
+            temp_env.state.current_player = self.state.current_player()
+            mcts = MCTS(temp_env, current_model, 50)
+            mcts.run()
+            pi = mcts.pi()
+            action = np.argmax(pi)
+            reward, done = self.step(action, state=state)
+            if done:
+                break
+        return reward
+
 
 
     # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
