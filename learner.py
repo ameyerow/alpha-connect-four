@@ -114,10 +114,10 @@ class Learner:
         score = 0
         for i in range(num_iters):
             self.env.reset()
-            winning_player = self.env.run(model1, model2)
+            winning_player = self.env.run_full_mcts(model1, model2)
             score += winning_player
             self.env.reset()
-            winning_player = self.env.run(model2, model1)
+            winning_player = self.env.run_full_mcts(model2, model1)
             score -= winning_player
 
         print(score)
