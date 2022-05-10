@@ -27,6 +27,7 @@ class Learner:
             board_state = self.env.state.board
 
             self.mcts = MCTS(self.env, self.cur_model)
+            self.mcts.run()
             pi = self.mcts.pi()
             examples.append([board_state, current_player, pi])
             if np.sum(pi) == 0:

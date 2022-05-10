@@ -34,12 +34,13 @@ class Node:
             value for the terminal state.
         param env: The environment of the game.
         """
-        action_probs, _ = model.forward(self.state)
+        action_probs, _ = model.forward(env.observation(self.state))
 
         # Balance probabilities based on some actions being illegal
         for action in range(len(action_probs)):
             if not env.is_legal_action(action, state=self.state):
                 action_probs[action] = 0
+        action_probs = action_probs.detach().numpy()
         prob_sum = np.sum(action_probs)
         if prob_sum == 0:
             action_probs = np.ones(env.action_space_shape) / len(action_probs) # TODO: maybe change divisor

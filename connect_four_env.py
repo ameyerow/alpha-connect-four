@@ -65,12 +65,12 @@ class ConnectFourEnv(AdversarialEnv):
             for action in range(len(action_probs)):
                 if not self.is_legal_action(action, state=state):
                     action_probs[action] = 0
+            action_probs = action_probs.detach().numpy()
             prob_sum = np.sum(action_probs)
             if prob_sum == 0:
                 action_probs = np.ones(self.action_space_shape) / len(action_probs) # TODO: maybe change divisor
             else:
                 action_probs /= np.sum(action_probs)
-
             action = np.random.choice(np.arange(self.board_shape[1]), p=np.reshape(action_probs, self.board_shape[1]))
             reward, done = self.step(action, state=state)
             render_if_enabled(state)

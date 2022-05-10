@@ -14,6 +14,7 @@ class ConnectFourModel(nn.Module):
         self.values2 = torch.nn.Tanh()
 
     def forward(self, X):
+        print(X)
         X = np.reshape(X, (-1, 42))
         X = torch.from_numpy(X).float()
         pi_outputs = self.pi1(X)
