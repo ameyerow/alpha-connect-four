@@ -40,9 +40,9 @@ class Learner:
             action = np.random.choice(len(pi), p=pi)
 
             # reward for the player who placed the last piece
-            reward, done = self.env.step(action)
+            winning_player = self.env.step(action)
 
-            if done:
+            if winning_player is not None:
                 boards = []
                 pi = []
                 values = []
@@ -52,9 +52,9 @@ class Learner:
                     # for the player who eventually loses at each step
 
                     # (board, pi, v) form where pi is always from the perspective of player 1
-                    boards.append(example[0] * example[1])
-                    pi.append(example[2])
-                    values.append(example[1] * current_player * reward)
+                    boards.append(example[0] * example[1]) # changes board so current player is always player 1
+                    pi.append(example[2]) # pi is unchanged
+                    values.append(example[1] * winning_player) # winning player is multiplied by current player so always -1 if current player lost and 1 if current player won
 
                 return boards, pi, values
 
@@ -96,11 +96,11 @@ class Learner:
         score = 0
         for i in range(int(self.test_games / 2)):
             self.env.reset()
-            player, reward = self.env.run(self.cur_model, self.next_model)
-            score += player * reward
+            winning_player = self.env.run(self.cur_model, self.next_model)
+            score += winning_player
             self.env.reset()
-            player, reward = self.env.run(self.next_model, self.cur_model)
-            score -= player * reward
+            winning_player = self.env.run(self.next_model, self.cur_model)
+            score -= winning_player
 
         if score > 0:
             self.cur_model = self.next_model
@@ -114,11 +114,11 @@ class Learner:
         score = 0
         for i in range(num_iters):
             self.env.reset()
-            player, reward = self.env.run(model1, model2)
-            score += player * reward
+            winning_player = self.env.run(model1, model2)
+            score += winning_player
             self.env.reset()
-            player, reward = self.env.run(model2, model1)
-            score -= player * reward
+            winning_player = self.env.run(model2, model1)
+            score -= winning_player
 
         print(score)
         if score > 0:
