@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+import torch
 from connect_four_env import ConnectFourEnv
 from monte_carlo_tree_search import Node, MCTS, UCB1
 
@@ -11,7 +12,7 @@ class MCTSTests(unittest.TestCase):
             def forward(self, board):
                 # starting board is:
                 # [0, 0, 1, -1]
-                return np.array([0.25, 0.25, 0.25, 0.25]), 0.0001
+                return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=float), 0.0001
 
         env = ConnectFourEnv(board_shape=(1, 4), win_req=2)
         model = MockModel()

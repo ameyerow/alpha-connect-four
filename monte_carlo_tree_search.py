@@ -121,7 +121,7 @@ class MCTS:
             # Find a leaf node
             curr_node = self.root_node
             while curr_node.children:
-                ucb_scores = np.fromiter((UCB1(node, curr_node.visitation_count) for node in curr_node.children), np.float64)
+                ucb_scores = np.array(UCB1(node, curr_node.visitation_count) for node in curr_node.children)
                 maximizing_child_idx = np.argmax(ucb_scores)
                 curr_node = curr_node.children[maximizing_child_idx]
 

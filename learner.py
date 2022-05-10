@@ -30,10 +30,6 @@ class Learner:
             self.mcts.run()
             pi = self.mcts.pi()
             examples.append([board_state, current_player, pi])
-            if np.sum(pi) == 0:
-                print(board_state)
-                print(current_player)
-                print(pi)
             for action in range(len(pi)):
                 if not self.env.is_legal_action(action):
                     pi[action] = 0
@@ -66,10 +62,14 @@ class Learner:
         all_pis = []
         all_values = []
         for i in range(self.num_episodes):
+            print("creating episode", i)
             boards, pis, values = self.execute_episode()
+            print("episode", i, "created")
             all_boards.extend(boards)
             all_pis.extend(pis)
             all_values.extend(values)
+
+        print("length of training set:", len(all_boards))
 
         # copying the model
         save_checkpoint('cur_model', self.cur_model)
@@ -77,7 +77,7 @@ class Learner:
 
         cur_model_mcts = MCTS(self.env, self.cur_model)
 
-        train(self.next_model, all_boards, all_pis, all_values, batch_size=64, epochs=10)
+        train(self.next_model, all_boards, all_pis, all_values, batch_size=64, epochs=1000)
         next_model_mcts = MCTS(self.env, self.next_model)
 
         # + for net cur_model_mcts victories, - for net next_model_mcts victories
@@ -97,13 +97,18 @@ class Learner:
 
         score = 0
         for i in range(int(self.test_games / 2)):
-            player, reward = self.env.run(MCTSLearner(self.cur_model), MCTSLearner(self.next_model))
+            player, reward = self.env.run(MCTSLearner(self.cur_model), MCTSLearner(self.next_model), render=True)
+            print(player, reward)
             score += player * reward
-            player, reward = self.env.run(MCTSLearner(self.next_model), MCTSLearner(self.cur_model))
+            player, reward = self.env.run(MCTSLearner(self.next_model), MCTSLearner(self.cur_model), render=True)
+            print(player, reward)
             score -= player * reward
+            print("playing models against each other")
 
+        print(score)
         if score > 0:
             self.cur_model = self.next_model
+            print("new model was better")
 
 
 def save_checkpoint(filename, model):
@@ -157,7 +162,7 @@ def value_loss(sample_values, predicted_values):
     return loss.mean()
 
 if __name__=="__main__":
-    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 100)
+    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 3)
     learner.learn()
     
 
