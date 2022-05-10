@@ -61,7 +61,7 @@ class ConnectFourEnv(AdversarialEnv):
             # TODO: Consider what arguments a player needs to play the game - may need to move 'move' and 'check_winner' functions from here to the players
             current_player = players[state.current_player]
             action_probs, _ = current_player.forward(self.observation(state=state))
-            action_probs = action_probs.detach().numpy()[0] # needed to index zero to remove extra dimension - may require later change
+            action_probs = action_probs.squeeze().detach().numpy()
             # Balance probabilities based on some actions being illegal
             for action in range(len(action_probs)):
                 if not self.is_legal_action(action, state=state):

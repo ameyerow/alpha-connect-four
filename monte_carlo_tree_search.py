@@ -35,12 +35,12 @@ class Node:
         param env: The environment of the game.
         """
         action_probs, _ = model.forward(env.observation(self.state))
+        action_probs = action_probs.squeeze().detach().numpy()
 
         # Balance probabilities based on some actions being illegal
         for action in range(len(action_probs)):
             if not env.is_legal_action(action, state=self.state):
                 action_probs[action] = 0
-        action_probs = action_probs.detach().numpy()
         prob_sum = np.sum(action_probs)
         if prob_sum == 0:
             action_probs = np.ones(env.action_space_shape) / len(action_probs) # TODO: maybe change divisor
@@ -121,7 +121,7 @@ class MCTS:
             # Find a leaf node
             curr_node = self.root_node
             while curr_node.children:
-                ucb_scores = np.array(UCB1(node, curr_node.visitation_count) for node in curr_node.children)
+                ucb_scores = np.array([UCB1(node, curr_node.visitation_count) for node in curr_node.children])
                 maximizing_child_idx = np.argmax(ucb_scores)
                 curr_node = curr_node.children[maximizing_child_idx]
 
