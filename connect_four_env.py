@@ -72,14 +72,14 @@ class ConnectFourEnv(AdversarialEnv):
                 action_probs = np.ones(self.action_space_shape) / len(action_probs) # TODO: maybe change divisor
             else:
                 action_probs /= np.sum(action_probs)
-            action_probs /= np.sum(action_probs) # for some reason another normalization is required?
+
             action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
             reward, done = self.step(action, state=state)
             render_if_enabled(state)
             if done:
                 break
 
-        return self.state.current_player, reward
+        return state.current_player, reward
 
 
     # takes a step with a given action. Returns the new board and the result, which is win, loss, draw, or None if the
@@ -93,8 +93,7 @@ class ConnectFourEnv(AdversarialEnv):
         winning_player = self.__check_victory(state)
 
         if winning_player is not None:
-            modifier = 1 if winning_player == state.current_player else -1
-            reward = self.WIN_REWARD * modifier
+            reward = self.WIN_REWARD * state.current_player
         elif len(self.__get_allowed_moves(state)) == 0:
             reward = self.DRAW_REWARD
         else:

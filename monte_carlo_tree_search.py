@@ -96,11 +96,11 @@ def UCB1(node: Node, parent_visitation_count: int, C: float = 2.0) -> float:
     if node.visitation_count == 0:
         return float("inf")
 
-    average_value =  node.total_value / node.visitation_count
+    average_value =  -node.total_value / node.visitation_count
     visitation_ratio = math.log(parent_visitation_count)/node.visitation_count
 
     # The value of the children is from the perspective of the opposing player, so negate it
-    return -average_value + node.prior * C * math.sqrt(visitation_ratio)
+    return average_value + node.prior * C * math.sqrt(visitation_ratio)
 
 class MCTS:
     def __init__(self, env: AdversarialEnv, model, num_simulations=50):
