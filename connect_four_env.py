@@ -6,6 +6,7 @@ from time import sleep
 from overrides import overrides
 from numpy import ndarray
 from adversarial_env import AdversarialEnv, State
+import torch
 
 
 class ConnectFourEnv(AdversarialEnv):
@@ -65,12 +66,12 @@ class ConnectFourEnv(AdversarialEnv):
                 if not self.is_legal_action(action, state=state):
                     action_probs[action] = 0
             prob_sum = np.sum(action_probs)
-            if prob_sum == 0: # TODO: this should probably never happen, bug if it does
+            if prob_sum == 0:
                 action_probs = np.ones(self.action_space_shape) / len(action_probs) # TODO: maybe change divisor
             else:
                 action_probs /= np.sum(action_probs)
 
-            action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
+            action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs[0])
             reward, done = self.step(action, state=state)
             render_if_enabled(state)
             if done:

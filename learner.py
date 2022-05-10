@@ -3,6 +3,7 @@ import torch
 from adversarial_env import AdversarialEnv, State
 from connect_four_env import ConnectFourEnv
 from monte_carlo_tree_search import MCTS
+from connect_four_model import ConnectFourModel
 import random
 import torch.nn as nn
 
@@ -26,16 +27,24 @@ class Learner:
             board_state = self.env.state.board
 
             self.mcts = MCTS(self.env, self.cur_model)
-            pi = self.mcts.pi(board_state, current_player)
+            pi = self.mcts.pi()
             examples.append([board_state, current_player, pi])
+            if np.sum(pi) == 0:
+                print(board_state)
+                print(current_player)
+                print(pi)
+            for action in range(len(pi)):
+                if not self.env.is_legal_action(action):
+                    pi[action] = 0
+            prob_sum = np.sum(pi)
+            pi /= np.sum(pi)
+
             action = np.random.choice(len(pi), p=pi)
 
             # reward for the player who placed the last piece
             reward, done = self.env.step(action)
 
-            if not done:
-                self.env.current_player *= -1
-            else:
+            if done:
                 boards = []
                 pi = []
                 values = []
@@ -62,8 +71,8 @@ class Learner:
             all_values.extend(values)
 
         # copying the model
-        self.save_checkpoint('cur_model', self.cur_model)
-        self.load_checkpoint('cur_model', self.next_model)
+        save_checkpoint('cur_model', self.cur_model)
+        load_checkpoint('cur_model', self.next_model)
 
         cur_model_mcts = MCTS(self.env, self.cur_model)
 
@@ -75,19 +84,21 @@ class Learner:
             def __init__(self, model):
                 self.model = model
 
-            def forward(self, X):
-                current_player
+            def forward(self, observation_board):
                 env = ConnectFourEnv()
-                env.state = State(X, current_player)
+                env.state = State(observation_board, 1)
+                print("here")
                 mcts = MCTS(env, self.model)
+                print("there")
                 mcts.run()
+                print("anywhere")
                 return mcts.pi(), mcts.value()
 
         score = 0
         for i in range(int(self.test_games / 2)):
-            player, reward = self.env.run(cur_model_mcts.predict_move, next_model_mcts.predict_move)
+            player, reward = self.env.run(MCTSLearner(self.cur_model), MCTSLearner(self.next_model))
             score += player * reward
-            player, reward = self.env.run(next_model_mcts.predict_move, cur_model_mcts.predict_move)
+            player, reward = self.env.run(MCTSLearner(self.next_model), MCTSLearner(self.cur_model))
             score -= player * reward
 
         if score > 0:
@@ -134,10 +145,19 @@ def train(model: nn.Module, boards, pis, values, batch_size, epochs):
 
 
 def pi_loss(sample_pis, predicted_pis):
+    sample_pis = torch.from_numpy(sample_pis)
     loss = -(sample_pis * torch.log(predicted_pis)).sum(dim=1)
     return loss.mean()
 
 
 def value_loss(sample_values, predicted_values):
+    sample_values = torch.from_numpy(sample_values)
     loss = torch.sum((sample_values - predicted_values.view(-1)) ** 2)
     return loss.mean()
+
+if __name__=="__main__":
+    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 100)
+    learner.learn()
+    
+
+
