@@ -93,7 +93,7 @@ class ConnectFourEnv(AdversarialEnv):
             current_model = models[state.current_player]
             temp_env = ConnectFourEnv(self.board_shape, self.win_req)
             temp_env.state.board = self.state.board.copy()
-            temp_env.state.current_player = self.state.current_player()
+            temp_env.state.current_player = self.state.current_player
             mcts = MCTS(temp_env, current_model, 50)
             mcts.run()
             pi = mcts.pi()

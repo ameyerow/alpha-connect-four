@@ -11,7 +11,7 @@ from random_model import RandomModel
 
 class Learner:
 
-    def __init__(self, env: AdversarialEnv, cur_model, next_model, num_episodes, test_games=50):
+    def __init__(self, env: AdversarialEnv, cur_model, next_model, num_episodes, test_games=100):
         self.env = env
         self.cur_model = cur_model
         self.next_model = next_model
@@ -21,16 +21,15 @@ class Learner:
         random.seed(0)
 
     def execute_episode(self):
-        self.env.reset()
         examples = []
         while True:
             current_player = self.env.state.current_player
-            board_state = self.env.state.board
+            board = self.env.state.board.copy()
 
             self.mcts = MCTS(self.env, self.cur_model)
             self.mcts.run()
             pi = self.mcts.pi()
-            examples.append([board_state, current_player, pi])
+            examples.append([board, current_player, pi])
             for action in range(len(pi)):
                 if not self.env.is_legal_action(action):
                     pi[action] = 0
@@ -63,6 +62,7 @@ class Learner:
         all_pis = []
         all_values = []
         for i in range(self.num_episodes):
+            self.env.reset()
             print("creating episode", i)
             boards, pis, values = self.execute_episode()
             print("episode", i, "created")
@@ -93,14 +93,7 @@ class Learner:
                 mcts.run()
                 return mcts.pi(), mcts.value()
 
-        score = 0
-        for i in range(int(self.test_games / 2)):
-            self.env.reset()
-            winning_player = self.env.run(self.cur_model, self.next_model)
-            score += winning_player
-            self.env.reset()
-            winning_player = self.env.run(self.next_model, self.cur_model)
-            score -= winning_player
+        score = self.compare_models(self.cur_model, self.next_model, self.test_games)
 
         if score > 0:
             self.cur_model = self.next_model
@@ -114,10 +107,10 @@ class Learner:
         score = 0
         for i in range(num_iters):
             self.env.reset()
-            winning_player = self.env.run_full_mcts(model1, model2)
+            winning_player = self.env.run(model1, model2)
             score += winning_player
             self.env.reset()
-            winning_player = self.env.run_full_mcts(model2, model1)
+            winning_player = self.env.run(model2, model1)
             score -= winning_player
 
         print(score)
@@ -179,7 +172,7 @@ def value_loss(sample_values, predicted_values):
     return loss.mean()
 
 if __name__=="__main__":
-    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 3)
+    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 5)
     scores = []
     for i in range(10):
         learner.learn()

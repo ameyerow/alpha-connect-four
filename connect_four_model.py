@@ -30,6 +30,7 @@ class ConnectFourModel(nn.Module):
         pi_outputs = self.relu(pi_outputs)
         pi_outputs = self.flatten(pi_outputs)
         pi_outputs = self.pi3(pi_outputs)
+        pi_outputs = self.relu(pi_outputs)
         pi_outputs = self.pi4(pi_outputs)
         pi_outputs = self.softmax(pi_outputs)
 
