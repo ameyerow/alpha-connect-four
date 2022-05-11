@@ -19,6 +19,9 @@ class Learner:
         self.test_games = test_games
         self.num_episodes = num_episodes
         self.mcts = None
+        self.train_boards = []
+        self.train_pis = []
+        self.train_values = []
         random.seed(0)
 
     def execute_episode(self):
@@ -54,24 +57,21 @@ class Learner:
                     # (board, pi, v) form where pi is always from the perspective of player 1
                     boards.append(example[0] * example[1]) # changes board so current player is always player 1
                     pi.append(example[2]) # pi is unchanged
-                    values.append(example[1] * winning_player) # winning player is multiplied by current player so always -1 if current player lost and 1 if current player won
+                    values.append(example[1] * winning_player * -1) # winning player is multiplied by current player so always -1 if current player lost and 1 if current player won
 
                 return boards, pi, values
 
     def learn(self):
-        all_boards = []
-        all_pis = []
-        all_values = []
         for i in range(self.num_episodes):
             self.env.reset()
             print("creating episode", i)
             boards, pis, values = self.execute_episode()
             print("episode", i, "created")
-            all_boards.extend(boards)
-            all_pis.extend(pis)
-            all_values.extend(values)
+            self.train_boards.extend(boards)
+            self.train_pis.extend(pis)
+            self.train_values.extend(values)
 
-        print("length of training set:", len(all_boards))
+        print("length of training set:", len(self.train_boards))
 
         # copying the model
         save_checkpoint('cur_model', self.cur_model)
@@ -79,7 +79,7 @@ class Learner:
 
         cur_model_mcts = MCTS(self.env, self.cur_model)
 
-        train(self.next_model, all_boards, all_pis, all_values, batch_size=64, epochs=5)
+        train(self.next_model, self.train_boards, self.train_pis, self.train_values, batch_size=64, epochs=10)
         next_model_mcts = MCTS(self.env, self.next_model)
 
         # + for net cur_model_mcts victories, - for net next_model_mcts victories
@@ -169,11 +169,11 @@ def pi_loss(sample_pis, predicted_pis):
 
 def value_loss(sample_values, predicted_values):
     sample_values = torch.from_numpy(sample_values)
-    loss = torch.sum((sample_values - predicted_values.view(-1)) ** 2)
+    loss = torch.sum((predicted_values.squeeze() - sample_values) ** 2)
     return loss.mean()
 
 if __name__=="__main__":
-    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 5)
+    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 2)
     scores = []
     for i in range(10):
         learner.learn()
