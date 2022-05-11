@@ -17,6 +17,8 @@ import pickle
 device = torch.device("cuda:0")
 
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class Learner:
 
     def __init__(self, env: AdversarialEnv, cur_model, next_model, num_episodes, test_games=100):
@@ -90,6 +92,7 @@ class Learner:
         # copying the model
         save_checkpoint('cur_model', self.cur_model)
         load_checkpoint('cur_model', self.next_model)
+
         self.next_model.to(device)
 
         train(self.next_model, self.train_boards, self.train_pis, self.train_values, batch_size=64, epochs=100)
@@ -204,7 +207,7 @@ if __name__=="__main__":
     ties = []
     while True:
         learner.learn()
-        score, win, loss, tie = compare_models(learner.env, learner.cur_model, RandomModel(7), 100)
+        score, win, loss, tie = compare_models(learner.env, learner.cur_model, random_model, 100)
         scores.append(score)
         wins.append(win)
         losses.append(loss)

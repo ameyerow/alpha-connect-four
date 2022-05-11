@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from torch import nn
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ConnectFourModel(nn.Module):
 
@@ -23,7 +24,7 @@ class ConnectFourModel(nn.Module):
 
     def forward(self, X):
         X = np.reshape(X, (-1, 1, 6, 7))
-        X = torch.from_numpy(X).float()
+        X = torch.from_numpy(X).float().to(device)
         pi_outputs = self.pi1(X)
         pi_outputs = self.relu(pi_outputs)
         pi_outputs = self.pi2(pi_outputs)

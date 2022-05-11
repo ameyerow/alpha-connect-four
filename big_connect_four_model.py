@@ -3,6 +3,8 @@ import numpy as np
 from torch import nn
 
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class BigConnectFourModel(nn.Module):
 
     def __init__(self):
@@ -27,7 +29,7 @@ class BigConnectFourModel(nn.Module):
 
     def forward(self, X):
         X = np.reshape(X, (-1, 1, 6, 7))
-        X = torch.from_numpy(X).float()
+        X = torch.from_numpy(X).float().to(device)
         X = self.bn1(X)
 
         pi_outputs = torch.cat((self.pi1(X), X), 1)
