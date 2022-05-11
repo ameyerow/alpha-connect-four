@@ -31,6 +31,8 @@ class Learner:
         self.train_boards = []
         self.train_pis = []
         self.train_values = []
+        self.cur_optimizer = torch.optim.Adam(cur_model.parameters(), 0.001)
+        self.next_optimizer = torch.optim.Adam(next_model.parameters(), 0.001)
         random.seed(0)
 
     def execute_episode(self):
@@ -94,17 +96,18 @@ class Learner:
         print("length of training set:", len(self.train_boards))
 
         # copying the model
-        save_checkpoint('cur_model', self.cur_model)
-        load_checkpoint('cur_model', self.next_model)
+        save_checkpoint('cur_model', self.cur_model, self.cur_optimizer)
+        load_checkpoint('cur_model', self.next_model, self.next_optimizer)
 
         self.next_model.to(device)
 
-        train(self.next_model, self.train_boards, self.train_pis, self.train_values, batch_size=64, epochs=100)
+        train(self.next_model, self.train_boards, self.train_pis, self.train_values, optimizer=self.next_optimizer, batch_size=64, epochs=100)
 
         score, _, _, _ = compare_models(self.env, self.next_model, self.cur_model, self.test_games)
 
         if score > 0:
             self.cur_model = self.next_model
+            self.cur_optimizer = self.next_optimizer
             print("new model was better with a net game lead of", score, "across", self.test_games, "games")
             # self.train_boards = []
             # self.train_values = []
@@ -148,15 +151,18 @@ def compare_models(env, model1, model2, num_iters, render=False):
     return score, wins, losses, ties
 
 
-def save_checkpoint(filename, model):
+def save_checkpoint(filename, model, optimizer):
     torch.save({
-        'state_dict': model.state_dict()
+        'state_dict': model.state_dict(),
+        'optimizer': optimizer.state_dict()
     }, filename)
 
 
-def load_checkpoint(filename, model):
+def load_checkpoint(filename, model, optimizer):
     checkpoint = torch.load(filename)
     model.load_state_dict(checkpoint['state_dict'])
+    if 'optimizer' in checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer'])
 
 
 def train(model: nn.Module, boards, pis, values, batch_size, epochs, optimizer):
@@ -202,7 +208,8 @@ if __name__=="__main__":
     model2 = LongConnectFourModel()
     model1.to(device)
     model2.to(device)
-    load_checkpoint("cur_model", model1)
+    optimizer = torch.optim.Adam(model1.parameters(), 0.001)
+    load_checkpoint("cur_model", model1, optimizer)
     learner = Learner(ConnectFourEnv(), model1, model2, 0)
     scores = []
     wins = []
