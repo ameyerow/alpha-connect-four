@@ -177,7 +177,7 @@ if __name__=="__main__":
     scores = []
     for i in range(10):
         learner.learn()
-        score = learner.compare_models(learner.cur_model, RandomModel(4), 100)
+        score = learner.compare_models(learner.cur_model, RandomModel(7), 100)
         scores.append(score)
     print(scores)
     save_checkpoint("best_model", learner.cur_model)
