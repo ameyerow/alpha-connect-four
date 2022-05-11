@@ -160,7 +160,7 @@ def save_checkpoint(filename, model, optimizer):
 
 
 def load_checkpoint(filename, model, optimizer):
-    checkpoint = torch.load(filename)
+    checkpoint = torch.load(filename, map_location=device)
     model.load_state_dict(checkpoint['state_dict'])
     if 'optimizer' in checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer'])

@@ -58,7 +58,6 @@ class ConnectFourEnv(AdversarialEnv):
         while True:
             if render:
                 print(state.board)
-            # TODO: Consider what arguments a player needs to play the game - may need to move 'move' and 'check_winner' functions from here to the players
             current_player = players[state.current_player]
             action_probs, _ = current_player.forward(self.observation(state=state))
             action_probs = action_probs.squeeze().detach().cpu().numpy()
@@ -75,7 +74,6 @@ class ConnectFourEnv(AdversarialEnv):
             action_probs /= np.sum(action_probs)
             if test:
                 action = np.argmax(action_probs)
-
             else:
                 action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
             winning_player, done = self.step(action, state=state)
