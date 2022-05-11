@@ -1,9 +1,10 @@
 import math
-import numpy as np
-from copy import deepcopy
-from typing import List
-from numpy import average, ndarray
 import torch
+import numpy as np
+from typing import List
+from numpy import ndarray
+from copy import deepcopy
+
 import connect_four_env
 from adversarial_env import AdversarialEnv, State
 
