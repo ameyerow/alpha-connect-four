@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from tqdm import tqdm
 from adversarial_env import AdversarialEnv, State
 from connect_four_env import ConnectFourEnv
 from connect_two_model import ConnectTwoModel
@@ -62,11 +63,12 @@ class Learner:
                 return boards, pi, values
 
     def learn(self):
-        for i in range(self.num_episodes):
+
+        print("Generating Episodes...")
+        for _ in tqdm(range(self.num_episodes)):
             self.env.reset()
-            print("creating episode", i)
             boards, pis, values = self.execute_episode()
-            print("episode", i, "created")
+            
             self.train_boards.extend(boards)
             self.train_pis.extend(pis)
             self.train_values.extend(values)
@@ -105,8 +107,9 @@ class Learner:
             print("new model was worse with net game losses of", score, "across", self.test_games, "games")
 
     def compare_models(self, model1, model2, num_iters):
+        print("Comparing models...")
         score = 0
-        for i in range(num_iters):
+        for _ in tqdm(range(num_iters)):
             self.env.reset()
             winning_player = self.env.run(model1, model2)
             score += winning_player
@@ -114,7 +117,6 @@ class Learner:
             winning_player = self.env.run(model2, model1)
             score -= winning_player
 
-        print(score)
         if score > 0:
             print("model 1 was better with a net game lead of", score, "across", num_iters*2, "games")
         else:
