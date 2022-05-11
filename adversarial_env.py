@@ -125,4 +125,3 @@ class AdversarialEnv(metaclass=abc.ABCMeta):
             environment.
         """
         raise NotImplementedError
-

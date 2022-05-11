@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from adversarial_env import AdversarialEnv, State
 from connect_four_env import ConnectFourEnv
+from connect_two_model import ConnectTwoModel
 from monte_carlo_tree_search import MCTS
 from connect_four_model import ConnectFourModel
 import random
@@ -176,7 +177,7 @@ if __name__=="__main__":
     scores = []
     for i in range(10):
         learner.learn()
-        score = learner.compare_models(learner.cur_model, RandomModel(), 100)
+        score = learner.compare_models(learner.cur_model, RandomModel(4), 100)
         scores.append(score)
     print(scores)
     save_checkpoint("best_model", learner.cur_model)

@@ -19,7 +19,7 @@ class MCTSTests(unittest.TestCase):
         mcts = MCTS(env, model, num_simulations=100)
         mcts.run()
 
-        # the best move is to play at index 1 or 2
+        # The best move is to play at index 1 or 2.
         self.assertIn(np.argmax(mcts.pi()), [1, 2])
 
     def test_mcts_from_second_move(self):
@@ -33,7 +33,7 @@ class MCTSTests(unittest.TestCase):
         mcts = MCTS(env, model, num_simulations=100)
         mcts.run()
 
-        # the best move is to play at index 1
+        # The best move is to play at index 1.
         self.assertEqual(np.argmax(mcts.pi()), 1)
     
     def test_mcts_from_flipped_second_move(self):
@@ -46,8 +46,8 @@ class MCTSTests(unittest.TestCase):
         model = MockModel()
         mcts = MCTS(env, model, num_simulations=100)
         mcts.run()
-        # TODO: maybe node should contain player that just made the move rather than the current player?
-        # the best move is to play at index 2
+
+        # The best move is to play at index 2.
         self.assertEqual(np.argmax(mcts.pi()), 2)
 
     def test_mcts_winning_move(self):
@@ -61,7 +61,7 @@ class MCTSTests(unittest.TestCase):
         mcts = MCTS(env, model, num_simulations=100)
         mcts.run()
 
-        # the best move is to play at index 2
+        # The best move is to play at index 2.
         self.assertEqual(np.argmax(mcts.pi()), 2)
 
 if __name__ == '__main__':
