@@ -42,7 +42,7 @@ class Node:
             return
 
         action_probs, _ = model.forward(env.observation(self.state))
-        action_probs = action_probs.squeeze().detach().numpy()
+        action_probs = action_probs.squeeze().detach().cpu().numpy()
 
         # Balance probabilities based on some actions being illegal
         for action in range(len(action_probs)):
