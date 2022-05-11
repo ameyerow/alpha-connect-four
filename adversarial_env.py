@@ -36,7 +36,7 @@ class AdversarialEnv(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def run(self, model, adversarial_model, state: State=None, render=False) -> float:
+    def run(self, model, adversarial_model, state: State=None, render=False, test=False) -> float:
         """
         Given a model and an adversarial model, runs the environment to a terminal state using only NN estimation
         for move selection - used during MCTS rollout.

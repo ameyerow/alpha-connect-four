@@ -34,7 +34,7 @@ class ConnectFourEnv(AdversarialEnv):
         return state.board * self.state.current_player
 
     @overrides
-    def run(self, model, adversarial_model, state: State=None, render=False) -> float:
+    def run(self, model, adversarial_model, state: State=None, render=False, test=False) -> float:
         def render_if_enabled(state_to_render):
             if render:
                 sleep(0.5)
@@ -61,7 +61,7 @@ class ConnectFourEnv(AdversarialEnv):
             # TODO: Consider what arguments a player needs to play the game - may need to move 'move' and 'check_winner' functions from here to the players
             current_player = players[state.current_player]
             action_probs, _ = current_player.forward(self.observation(state=state))
-            action_probs = action_probs.squeeze().detach().numpy()
+            action_probs = action_probs.squeeze().detach().cpu().numpy()
             # Balance probabilities based on some actions being illegal
             def zero_out_impossible_moves(action, action_prob):
                 return action_prob if self.is_legal_action(action, state=state) else 0
@@ -73,8 +73,11 @@ class ConnectFourEnv(AdversarialEnv):
                 action_probs = np.array([zero_out_impossible_moves(action, action_prob)
                                          for action, action_prob in enumerate(action_probs)])
             action_probs /= np.sum(action_probs)
+            if test:
+                action = np.argmax(action_probs)
 
-            action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
+            else:
+                action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
             winning_player, done = self.step(action, state=state)
             render_if_enabled(state)
             if done:

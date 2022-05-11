@@ -6,9 +6,15 @@ from connect_four_env import ConnectFourEnv
 from connect_two_model import ConnectTwoModel
 from monte_carlo_tree_search import MCTS
 from connect_four_model import ConnectFourModel
+from big_connect_four_model import BigConnectFourModel
+from long_connect_four_model import LongConnectFourModel
 import random
 import torch.nn as nn
 from random_model import RandomModel
+import pickle
+
+
+device = torch.device("cuda:0")
 
 
 class Learner:
@@ -72,13 +78,19 @@ class Learner:
             self.train_boards.extend(boards)
             self.train_pis.extend(pis)
             self.train_values.extend(values)
+        while len(self.train_boards) > 4096:
+            self.train_boards.pop(0)
+            self.train_pis.pop(0)
+            self.train_values.pop(0)
+        with open("train", "wb") as tf:
+            pickle.dump((self.train_boards, self.train_pis, self.train_values), tf)
 
         print("length of training set:", len(self.train_boards))
 
         # copying the model
         save_checkpoint('cur_model', self.cur_model)
         load_checkpoint('cur_model', self.next_model)
-
+        self.next_model.to(device)
 
         train(self.next_model, self.train_boards, self.train_pis, self.train_values, batch_size=64, epochs=100)
 
@@ -87,9 +99,9 @@ class Learner:
         if score > 0:
             self.cur_model = self.next_model
             print("new model was better with a net game lead of", score, "across", self.test_games, "games")
-            self.train_boards = []
-            self.train_values = []
-            self.train_pis = []
+            # self.train_boards = []
+            # self.train_values = []
+            # self.train_pis = []
         elif score == 0:
             print("new model was even with old model across", self.test_games, "games")
         else:
@@ -169,37 +181,44 @@ def train(model: nn.Module, boards, pis, values, batch_size, epochs):
 
 
 def pi_loss(sample_pis, predicted_pis):
-    sample_pis = torch.from_numpy(sample_pis)
+    sample_pis = torch.from_numpy(sample_pis).to(device)
     loss = -(sample_pis * torch.log(predicted_pis)).sum(dim=1)
     return loss.mean()
 
 
 def value_loss(sample_values, predicted_values):
-    sample_values = torch.from_numpy(sample_values)
+    sample_values = torch.from_numpy(sample_values).to(device)
     loss = torch.sum((predicted_values.squeeze() - sample_values) ** 2)
     return loss.mean()
 
 if __name__=="__main__":
-    model = ConnectFourModel()
+    model1 = LongConnectFourModel()
+    model2 = LongConnectFourModel()
+    model1.to(device)
+    model2.to(device)
     # load_checkpoint("models/cur_model", model)
-    learner = Learner(ConnectFourEnv(), model, model, 5)
+    learner = Learner(ConnectFourEnv(), model1, model2, 10)
     scores = []
     wins = []
     losses = []
     ties = []
-    for i in range(20):
+    while True:
         learner.learn()
         score, win, loss, tie = compare_models(learner.env, learner.cur_model, RandomModel(7), 100)
         scores.append(score)
         wins.append(win)
         losses.append(loss)
         ties.append(tie)
-    print(scores, wins, losses, ties)
-    save_checkpoint("best_model", learner.cur_model)
+        with open("scores", "wb") as sf:
+            pickle.dump((scores, wins, losses, ties), sf)
+        print(scores, wins, losses, ties)
+    # save_checkpoint("best_model", learner.cur_model)
     # env = ConnectFourEnv()
-    # model = ConnectFourModel()
-    # load_checkpoint("cur_model", model)
-    # print(compare_models(env, model, RandomModel(7), 100))
+    # model = BigConnectFourModel()
+    # model2 = ConnectFourModel()
+    # load_checkpoint("models/cur_model", model)
+    # load_checkpoint("models/best_connect_four_model", model2)
+    # print(compare_models(env, model, RandomModel(7), 100, render=False))
 
 
 
