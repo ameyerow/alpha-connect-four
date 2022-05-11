@@ -38,13 +38,28 @@ class AdversarialEnv(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def run(self, model, adversarial_model, state: State=None, render=False) -> float:
         """
-        Given a model and an adversarial model, runs the environment to a terminal state.
+        Given a model and an adversarial model, runs the environment to a terminal state using only NN estimation
+        for move selection - used during MCTS rollout.
 
         param model: The model that dictates the moves of player 1
         param adversarial_model: The model that dictates the moves of player 2
         param state: The state of the environment. If None then this will use the state stored in the
             environment.
         return: The current player at the terminal state and the reward at the terminal state.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def run_full_mcts(self, model, adversarial_model, state: State=None) -> Any:
+        """
+        Given a model and an adversarial model, run the environment to terminal state using a full MCTS evaluation for
+        each moe selected - used during model evalulation.
+
+        param model: The model that dictates the moves of player 1
+        param adversarial_model: The model that dictates the moves of player 2
+        param state: The state of the environment. If None then this will use the state stored in the
+            environment.
+        :return: The winning player at the terminal state
         """
         raise NotImplementedError
 

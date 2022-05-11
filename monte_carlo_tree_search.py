@@ -3,7 +3,6 @@ import numpy as np
 from copy import deepcopy
 from typing import List
 from numpy import ndarray
-from connect_four_env import ConnectFourEnv
 from adversarial_env import AdversarialEnv, State
 
 
@@ -167,10 +166,11 @@ class MCTS:
 
 
 if __name__=="__main__":
-    class MockModel:
-        def forward(self, board):
-            return [0.25, 0.25, 0.25, 0.25], 0.0001
-    env = ConnectFourEnv(board_shape=(1, 4), win_req=2)
-    mcts = MCTS(env, MockModel(), num_simulations=800)
-    mcts.run()
-    print(mcts.pi())
+    pass
+    # class MockModel:
+    #     def forward(self, board):
+    #         return [0.25, 0.25, 0.25, 0.25], 0.0001
+    # env = ConnectFourEnv(board_shape=(1, 4), win_req=2)
+    # mcts = MCTS(env, MockModel(), num_simulations=800)
+    # mcts.run()
+    # print(mcts.pi())
