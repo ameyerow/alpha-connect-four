@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 from adversarial_env import AdversarialEnv, State
 from connect_four_env import ConnectFourEnv
 from connect_two_model import ConnectTwoModel
@@ -203,7 +204,43 @@ def value_loss(sample_values, predicted_values):
     loss = torch.sum((predicted_values.squeeze() - sample_values) ** 2)
     return loss.mean()
 
+def graph_results(scores, wins, losses, ties):
+    X = np.arange(len(scores))
+    scores = np.array(scores)
+    wins = np.array(wins)
+    losses = np.array(losses)
+    ties = np.array(ties)
+
+    figure, axis = plt.subplots(2, 2)
+
+    axis[0, 0].plot(X, scores)
+    axis[0, 0].set_title("Net Scores")
+
+    axis[0, 1].plot(X, wins, color="green")
+    axis[0, 1].set_title("Wins")
+
+    axis[1, 0].plot(X, losses, color="red")
+    axis[1, 0].set_title("Losses")
+
+    axis[1, 1].plot(X, ties, color="black")
+    axis[1, 1].set_title("Ties")
+
+    plt.subplots_adjust(left=0.1,
+                    bottom=0.1, 
+                    right=0.9, 
+                    top=0.9, 
+                    wspace=0.4, 
+                    hspace=0.4)
+
+    from datetime import datetime
+    plt.savefig(f'results/{datetime.now()}.png')
+    plt.show()
+
+
 if __name__=="__main__":
+    # scores, wins, losses, ties = ([-16, 62, 16, 20, 52, 55, 82, 48, 52, 76, 54, 48, 57, 91, 40, 45, 98, 56, 76, 86, 55, 39, 39, 38, 102, 68, 81, 60, 64, 54, 53, 56, 62, 68, 70, 84, 86, 66, 56, 90, 48, 44, 54, 81, 68, 82, 69, 67, 80, 77, 69, 83, 79, 79, 82, 80, 85, 76, 98, 54, 88, 76, 90, 82, 75, 94, 90, 99, 84, 92, 94, 102, 80, 68, 84, 88, 85, 75, 90, 85, 105, 89, 102, 77, 84, 93, 101], [92, 131, 108, 110, 126, 127, 141, 124, 126, 138, 127, 124, 128, 145, 119, 122, 149, 128, 138, 142, 127, 119, 119, 119, 151, 134, 140, 130, 132, 127, 126, 128, 131, 133, 135, 142, 143, 133, 128, 145, 124, 122, 127, 140, 134, 141, 134, 133, 140, 138, 134, 141, 139, 139, 141, 140, 142, 138, 149, 127, 144, 138, 145, 141, 137, 147, 145, 149, 142, 146, 147, 151, 140, 133, 142, 144, 142, 137, 145, 142, 152, 144, 151, 138, 142, 146, 150], [108, 69, 92, 90, 74, 72, 59, 76, 74, 62, 73, 76, 71, 54, 79, 77, 51, 72, 62, 56, 72, 80, 80, 81, 49, 66, 59, 70, 68, 73, 73, 72, 69, 65, 65, 58, 57, 67, 72, 55, 76, 78, 73, 59, 66, 59, 65, 66, 60, 61, 65, 58, 60, 60, 59, 60, 57, 62, 51, 73, 56, 62, 55, 59, 62, 53, 55, 50, 58, 54, 53, 49, 60, 65, 58, 56, 57, 62, 55, 57, 47, 55, 49, 61, 58, 53, 49], [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1])
+    # graph_results(scores, wins, losses, ties)
+
     model1 = LongConnectFourModel()
     model2 = LongConnectFourModel()
     model1.to(device)
@@ -215,7 +252,9 @@ if __name__=="__main__":
     wins = []
     losses = []
     ties = []
-    while True:
+
+    num_learning_epochs = 100
+    for _ in range(num_learning_epochs):
         learner.learn()
         score, win, loss, tie = compare_models(learner.env, learner.cur_model, RandomModel(7), 100)
         scores.append(score)
@@ -225,6 +264,8 @@ if __name__=="__main__":
         with open("scores", "wb") as sf:
             pickle.dump((scores, wins, losses, ties), sf)
         print(scores, wins, losses, ties)
+
+    graph_results(scores, wins, losses, ties)
     # env = ConnectFourEnv()
     # model = LongConnectFourModel()
     # model2 = ConnectFourModel()
