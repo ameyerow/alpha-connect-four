@@ -73,6 +73,10 @@ class Learner:
     def learn(self):
 
         print("Generating Episodes...")
+        if len(self.train_boards) == 0:
+            with open("train", "rb") as tf:
+                print("Loading previous training data")
+                self.train_boards, self.train_pis, self.train_values = pickle.load(tf)
         for _ in tqdm(range(self.num_episodes)):
             self.env.reset()
             boards, pis, values = self.execute_episode()
@@ -155,8 +159,7 @@ def load_checkpoint(filename, model):
     model.load_state_dict(checkpoint['state_dict'])
 
 
-def train(model: nn.Module, boards, pis, values, batch_size, epochs):
-    optimizer = torch.optim.Adam(model.parameters(), 0.001)
+def train(model: nn.Module, boards, pis, values, batch_size, epochs, optimizer):
     boards = np.array(boards)
     pis = np.array(pis)
     values = np.array(values)
@@ -199,15 +202,15 @@ if __name__=="__main__":
     model2 = LongConnectFourModel()
     model1.to(device)
     model2.to(device)
-    # load_checkpoint("models/cur_model", model)
-    learner = Learner(ConnectFourEnv(), model1, model2, 10)
+    load_checkpoint("cur_model", model1)
+    learner = Learner(ConnectFourEnv(), model1, model2, 0)
     scores = []
     wins = []
     losses = []
     ties = []
     while True:
         learner.learn()
-        score, win, loss, tie = compare_models(learner.env, learner.cur_model, random_model, 100)
+        score, win, loss, tie = compare_models(learner.env, learner.cur_model, RandomModel(7), 100)
         scores.append(score)
         wins.append(win)
         losses.append(loss)
@@ -215,11 +218,12 @@ if __name__=="__main__":
         with open("scores", "wb") as sf:
             pickle.dump((scores, wins, losses, ties), sf)
         print(scores, wins, losses, ties)
-    # save_checkpoint("best_model", learner.cur_model)
     # env = ConnectFourEnv()
-    # model = BigConnectFourModel()
+    # model = LongConnectFourModel()
     # model2 = ConnectFourModel()
-    # load_checkpoint("models/cur_model", model)
+    # model.to(device)
+    # model2.to(device)
+    # load_checkpoint("cur_model", model)
     # load_checkpoint("models/best_connect_four_model", model2)
     # print(compare_models(env, model, RandomModel(7), 100, render=False))
 
