@@ -82,7 +82,7 @@ class Learner:
 
         train(self.next_model, self.train_boards, self.train_pis, self.train_values, batch_size=64, epochs=100)
 
-        score, _, _, _ = self.compare_models(self.next_model, self.cur_model, self.test_games)
+        score, _, _, _ = compare_models(self.env, self.next_model, self.cur_model, self.test_games)
 
         if score > 0:
             self.cur_model = self.next_model
@@ -95,37 +95,38 @@ class Learner:
         else:
             print("new model was worse with net game losses of", score, "across", self.test_games, "games")
 
-    def compare_models(self, model1, model2, num_iters):
-        print("Comparing models...")
-        score = 0
-        wins = 0
-        losses = 0
-        ties = 0
-        for _ in tqdm(range(num_iters)):
-            self.env.reset()
-            winning_player = self.env.run(model1, model2)
-            score += winning_player
-            if winning_player > 0:
-                wins += 1
-            elif winning_player == 0:
-                ties += 1
-            else:
-                losses += 1
-            self.env.reset()
-            winning_player = self.env.run(model2, model1)
-            score -= winning_player
-            if winning_player < 0:
-                wins += 1
-            elif winning_player == 0:
-                ties += 1
-            else:
-                losses += 1
 
-        if score > 0:
-            print("model 1 was better with a net game lead of", score, "across", num_iters*2, "games")
+def compare_models(env, model1, model2, num_iters, render=False):
+    print("Comparing models...")
+    score = 0
+    wins = 0
+    losses = 0
+    ties = 0
+    for _ in tqdm(range(num_iters)):
+        env.reset()
+        winning_player = env.run(model1, model2, render=render)
+        score += winning_player
+        if winning_player > 0:
+            wins += 1
+        elif winning_player == 0:
+            ties += 1
         else:
-            print("model 1 was worse with a net game loss of", score, "across", num_iters*2, "games")
-        return score, wins, losses, ties
+            losses += 1
+        env.reset()
+        winning_player = env.run(model2, model1, render=render)
+        score -= winning_player
+        if winning_player < 0:
+            wins += 1
+        elif winning_player == 0:
+            ties += 1
+        else:
+            losses += 1
+
+    if score > 0:
+        print("model 1 was better with a net game lead of", score, "across", num_iters*2, "games")
+    else:
+        print("model 1 was worse with a net game loss of", score, "across", num_iters*2, "games")
+    return score, wins, losses, ties
 
 
 def save_checkpoint(filename, model):
@@ -179,20 +180,31 @@ def value_loss(sample_values, predicted_values):
     return loss.mean()
 
 if __name__=="__main__":
-    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 1)
+    model = ConnectFourModel()
+    # load_checkpoint("models/cur_model", model)
+    learner = Learner(ConnectFourEnv(), model, model, 5)
     scores = []
     wins = []
     losses = []
     ties = []
-    for i in range(10):
+    for i in range(20):
         learner.learn()
-        score, win, loss, tie = learner.compare_models(learner.cur_model, RandomModel(7), 100)
+        score, win, loss, tie = compare_models(learner.env, learner.cur_model, RandomModel(7), 100)
         scores.append(score)
         wins.append(win)
         losses.append(loss)
         ties.append(tie)
     print(scores, wins, losses, ties)
     save_checkpoint("best_model", learner.cur_model)
+    # env = ConnectFourEnv()
+    # model = ConnectFourModel()
+    # load_checkpoint("cur_model", model)
+    # print(compare_models(env, model, RandomModel(7), 100))
+
+
+
+
+
     
 
 

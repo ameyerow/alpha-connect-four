@@ -37,7 +37,7 @@ class ConnectFourEnv(AdversarialEnv):
     def run(self, model, adversarial_model, state: State=None, render=False) -> float:
         def render_if_enabled(state_to_render):
             if render:
-                sleep(1)
+                sleep(0.5)
                 self.render(state=state_to_render)
         
         if state is None:
@@ -52,6 +52,8 @@ class ConnectFourEnv(AdversarialEnv):
             return 0
 
         render_if_enabled(state)
+        model.eval()
+        adversarial_model.eval()
         players = [None, model, adversarial_model]
         while True:
             if render:
@@ -67,10 +69,10 @@ class ConnectFourEnv(AdversarialEnv):
                 for action, action_prob in enumerate(action_probs)])
             prob_sum = np.sum(action_probs)
             if prob_sum == 0:
-                print("prob sum should probably not equal 0")
-                action_probs = np.ones(self.action_space_shape) / len(action_probs) # TODO: maybe change divisor
-            else:
-                action_probs /= np.sum(action_probs)
+                action_probs = np.ones(self.action_space_shape)
+                action_probs = np.array([zero_out_impossible_moves(action, action_prob)
+                                         for action, action_prob in enumerate(action_probs)])
+            action_probs /= np.sum(action_probs)
 
             action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
             winning_player, done = self.step(action, state=state)
@@ -214,6 +216,7 @@ class ConnectFourEnv(AdversarialEnv):
         self.screen.blit(surface, (0,0))
         pygame.display.update()
         self.clock.tick(self.metadata["render_fps"])
+        pygame.event.get()
 
     # returns winning player where player is as represented in the __board. Player is None if
     # there is no winner
