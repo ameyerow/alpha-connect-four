@@ -3,7 +3,7 @@ import numpy as np
 from torch import nn
 
 
-class ConnectFourModel(nn.Module):
+class BigConnectFourModel(nn.Module):
 
     def __init__(self):
         super().__init__()
