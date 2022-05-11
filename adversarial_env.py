@@ -36,7 +36,7 @@ class AdversarialEnv(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def run(self, model, adversarial_model, state: State=None, render=False) -> Tuple[Any, float]:
+    def run(self, model, adversarial_model, state: State=None, render=False) -> float:
         """
         Given a model and an adversarial model, runs the environment to a terminal state.
 
@@ -56,7 +56,7 @@ class AdversarialEnv(metaclass=abc.ABCMeta):
         param action: The action that will be performed.
         param state: The state of the environment. If None then this will use the state stored in the
             environment.
-        return: The reward at the new state and whether it is terminal.
+        return: Who won the game (or 0 if its a draw) and whether the state is terminal.
         """
         raise NotImplementedError
 
@@ -79,7 +79,18 @@ class AdversarialEnv(metaclass=abc.ABCMeta):
         param action: The action that will be performed.
         param state: The state of the environment. If None then this will use the state stored in the
             environment.
-        return: True if the acton is legal, False otherwise.
+        return: True if the action is legal, False otherwise.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def is_terminal_state(self, state: State=None) -> bool:
+        """
+        In the given environment state, determine if it's terminal. 
+
+        param state: The state of the environment. If None then this will use the state stored in the
+            environment.
+        return: True if the state is terminal, False otherwise.
         """
         raise NotImplementedError
 

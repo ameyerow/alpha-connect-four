@@ -34,7 +34,7 @@ class ConnectFourEnv(AdversarialEnv):
         return state.board * self.state.current_player
 
     @overrides
-    def run(self, model, adversarial_model, state: State=None, render=False) -> Tuple[Any, float]:
+    def run(self, model, adversarial_model, state: State=None, render=False) -> float:
         def render_if_enabled(state_to_render):
             if render:
                 sleep(1)
@@ -47,12 +47,9 @@ class ConnectFourEnv(AdversarialEnv):
         # and the correct reward
         winning_player =  self.__check_victory(state)
         if winning_player is not None:
-            modifier = 1 if winning_player == state.current_player else -1
-            reward = self.WIN_REWARD * modifier
-            return state.current_player, reward
+            return winning_player
         elif len(self.__get_allowed_moves(state)) == 0:
-            reward = self.DRAW_REWARD
-            return state.current_player, reward
+            return 0
 
         render_if_enabled(state)
         players = [None, model, adversarial_model]
@@ -64,9 +61,10 @@ class ConnectFourEnv(AdversarialEnv):
             action_probs, _ = current_player.forward(self.observation(state=state))
             action_probs = action_probs.squeeze().detach().numpy()
             # Balance probabilities based on some actions being illegal
-            for action in range(len(action_probs)):
-                if not self.is_legal_action(action, state=state):
-                    action_probs[action] = 0
+            def zero_out_impossible_moves(action, action_prob):
+                return action_prob if self.is_legal_action(action, state=state) else 0
+            action_probs = np.array([zero_out_impossible_moves(action, action_prob) 
+                for action, action_prob in enumerate(action_probs)])
             prob_sum = np.sum(action_probs)
             if prob_sum == 0:
                 print("prob sum should probably not equal 0")
@@ -75,12 +73,12 @@ class ConnectFourEnv(AdversarialEnv):
                 action_probs /= np.sum(action_probs)
 
             action = np.random.choice(np.arange(self.board_shape[1]), p=action_probs)
-            reward, done = self.step(action, state=state)
+            winning_player, done = self.step(action, state=state)
             render_if_enabled(state)
             if done:
                 break
 
-        return state.current_player, reward
+        return winning_player
 
     def run_full_mcts(self, model, adversarial_model, state: State = None):
         if state is None:
@@ -118,15 +116,15 @@ class ConnectFourEnv(AdversarialEnv):
         winning_player = self.__check_victory(state)
 
         if winning_player is not None:
-            reward = self.WIN_REWARD * state.current_player
+            # Someone won
+            return winning_player, True
         elif len(self.__get_allowed_moves(state)) == 0:
-            reward = self.DRAW_REWARD
+            # It's a draw
+            return 0, True
         else:
+            # Game's not over
             state.current_player *= -1
-            reward = None
-
-        done = reward is not None
-        return reward, done
+            return None, False
 
     @overrides
     def perform_action_on_state(self, state: State, action) -> State:
@@ -142,6 +140,14 @@ class ConnectFourEnv(AdversarialEnv):
             state = self.state
         actions = np.nonzero(state.board[0] == 0)[0]
         return action in actions
+
+    @overrides
+    def is_terminal_state(self, state: State = None) -> bool:
+        if state is None:
+            state = self.state
+        someone_won = self.__check_victory(state) is not None
+        game_is_drawn = len(self.__get_allowed_moves(state)) == 0
+        return someone_won or game_is_drawn
 
     @overrides
     def reset(self):

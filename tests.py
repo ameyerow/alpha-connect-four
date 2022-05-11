@@ -46,7 +46,7 @@ class MCTSTests(unittest.TestCase):
         model = MockModel()
         mcts = MCTS(env, model, num_simulations=100)
         mcts.run()
-
+        # TODO: maybe node should contain player that just made the move rather than the current player?
         # the best move is to play at index 2
         self.assertEqual(np.argmax(mcts.pi()), 2)
 

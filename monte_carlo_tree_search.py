@@ -19,6 +19,7 @@ class Node:
         self.parent: Node = parent
         self.prior: float = prior
         self.state: State = state
+        self.responsible_player = state.current_player * -1
 
         self.visitation_count: int = 0
         self.total_value: int = 0
@@ -34,6 +35,10 @@ class Node:
             value for the terminal state.
         param env: The environment of the game.
         """
+        # Check if state is already terminal, don't expand if so
+        if env.is_terminal_state(self.state):
+            return
+
         action_probs, _ = model.forward(env.observation(self.state))
         action_probs = action_probs.squeeze().detach().numpy()
 
@@ -65,10 +70,13 @@ class Node:
         param env: The environment of the game.
         return: The value at the terminal state from the perspective of the current node.
         """
-        terminal_player, value = env.run(model, model, state=deepcopy(self.state))
-        if terminal_player != self.state.current_player:
-            value *= -1
-        return value
+        winning_player = env.run(model, model, state=deepcopy(self.state))
+        if winning_player == 0:
+            return 0
+        elif winning_player != self.responsible_player:
+            return -1
+        else:
+            return 1
 
     def backup(self, value: float):
         """
@@ -96,7 +104,7 @@ def UCB1(node: Node, parent_visitation_count: int, C: float = 2.0) -> float:
     if node.visitation_count == 0:
         return float("inf")
 
-    average_value =  -node.total_value / node.visitation_count
+    average_value =  node.total_value / node.visitation_count
     visitation_ratio = math.log(parent_visitation_count)/node.visitation_count
 
     # The value of the children is from the perspective of the opposing player, so negate it
@@ -117,7 +125,7 @@ class MCTS:
         self.root_node = Node(None, None, 1, self.env.state)
 
     def run(self):
-        for _ in range(self.num_simulations):
+        for i in range(self.num_simulations):
             # Find a leaf node
             curr_node = self.root_node
             while curr_node.children:
@@ -154,6 +162,7 @@ class MCTS:
         return action_probs
 
     def value(self) -> float:
+        # TODO: maybe pi * average values of children
         return self.root_node.total_value / self.root_node.visitation_count
 
 
