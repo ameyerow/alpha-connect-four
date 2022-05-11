@@ -58,7 +58,7 @@ class Learner:
                     # (board, pi, v) form where pi is always from the perspective of player 1
                     boards.append(example[0] * example[1]) # changes board so current player is always player 1
                     pi.append(example[2]) # pi is unchanged
-                    values.append(example[1] * winning_player * -1) # winning player is multiplied by current player so always -1 if current player lost and 1 if current player won
+                    values.append(example[1] * winning_player) # winning player is multiplied by current player so always -1 if current player lost and 1 if current player won
 
                 return boards, pi, values
 
@@ -79,28 +79,17 @@ class Learner:
         save_checkpoint('cur_model', self.cur_model)
         load_checkpoint('cur_model', self.next_model)
 
-        cur_model_mcts = MCTS(self.env, self.cur_model)
 
-        train(self.next_model, self.train_boards, self.train_pis, self.train_values, batch_size=64, epochs=10)
-        next_model_mcts = MCTS(self.env, self.next_model)
+        train(self.next_model, self.train_boards, self.train_pis, self.train_values, batch_size=64, epochs=100)
 
-        # + for net cur_model_mcts victories, - for net next_model_mcts victories
-        class MCTSLearner:
-            def __init__(self, model):
-                self.model = model
-
-            def forward(self, observation_board):
-                env = ConnectFourEnv()
-                env.state = State(observation_board, 1)
-                mcts = MCTS(env, self.model)
-                mcts.run()
-                return mcts.pi(), mcts.value()
-
-        score = self.compare_models(self.cur_model, self.next_model, self.test_games)
+        score, _, _, _ = self.compare_models(self.next_model, self.cur_model, self.test_games)
 
         if score > 0:
             self.cur_model = self.next_model
             print("new model was better with a net game lead of", score, "across", self.test_games, "games")
+            self.train_boards = []
+            self.train_values = []
+            self.train_pis = []
         elif score == 0:
             print("new model was even with old model across", self.test_games, "games")
         else:
@@ -109,19 +98,34 @@ class Learner:
     def compare_models(self, model1, model2, num_iters):
         print("Comparing models...")
         score = 0
+        wins = 0
+        losses = 0
+        ties = 0
         for _ in tqdm(range(num_iters)):
             self.env.reset()
             winning_player = self.env.run(model1, model2)
             score += winning_player
+            if winning_player > 0:
+                wins += 1
+            elif winning_player == 0:
+                ties += 1
+            else:
+                losses += 1
             self.env.reset()
             winning_player = self.env.run(model2, model1)
             score -= winning_player
+            if winning_player < 0:
+                wins += 1
+            elif winning_player == 0:
+                ties += 1
+            else:
+                losses += 1
 
         if score > 0:
             print("model 1 was better with a net game lead of", score, "across", num_iters*2, "games")
         else:
             print("model 1 was worse with a net game loss of", score, "across", num_iters*2, "games")
-        return score
+        return score, wins, losses, ties
 
 
 def save_checkpoint(filename, model):
@@ -160,7 +164,7 @@ def train(model: nn.Module, boards, pis, values, batch_size, epochs):
             epoch_loss += loss.item() * len(boards_batch)
             optimizer.step()
             i += 1
-        print("Epoch loss:", epoch_loss)
+        print("Epoch loss:", epoch_loss/len(boards))
 
 
 def pi_loss(sample_pis, predicted_pis):
@@ -175,13 +179,19 @@ def value_loss(sample_values, predicted_values):
     return loss.mean()
 
 if __name__=="__main__":
-    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 2)
+    learner = Learner(ConnectFourEnv(), ConnectFourModel(), ConnectFourModel(), 1)
     scores = []
+    wins = []
+    losses = []
+    ties = []
     for i in range(10):
         learner.learn()
-        score = learner.compare_models(learner.cur_model, RandomModel(7), 100)
+        score, win, loss, tie = learner.compare_models(learner.cur_model, RandomModel(7), 100)
         scores.append(score)
-    print(scores)
+        wins.append(win)
+        losses.append(loss)
+        ties.append(tie)
+    print(scores, wins, losses, ties)
     save_checkpoint("best_model", learner.cur_model)
     
 
