@@ -75,10 +75,10 @@ class Learner:
     def learn(self):
 
         print("Generating Episodes...")
-        if len(self.train_boards) == 0:
-            with open("train", "rb") as tf:
-                print("Loading previous training data")
-                self.train_boards, self.train_pis, self.train_values = pickle.load(tf)
+        # if len(self.train_boards) == 0:
+        #     with open("train", "rb") as tf:
+        #         print("Loading previous training data")
+        #         self.train_boards, self.train_pis, self.train_values = pickle.load(tf)
         for _ in tqdm(range(self.num_episodes)):
             self.env.reset()
             boards, pis, values = self.execute_episode()
@@ -86,22 +86,22 @@ class Learner:
             self.train_boards.extend(boards)
             self.train_pis.extend(pis)
             self.train_values.extend(values)
-        while len(self.train_boards) > 4096:
+        while len(self.train_boards) > 512:
             self.train_boards.pop(0)
             self.train_pis.pop(0)
             self.train_values.pop(0)
-        with open("train", "wb") as tf:
+        with open("new_train", "wb") as tf:
             pickle.dump((self.train_boards, self.train_pis, self.train_values), tf)
 
         print("length of training set:", len(self.train_boards))
 
         # copying the model
         save_checkpoint('cur_model', self.cur_model, self.cur_optimizer)
-        load_checkpoint('cur_model', self.next_model, self.next_optimizer)
+        self.next_model = load_checkpoint('cur_model', self.next_model, self.next_optimizer)
 
         self.next_model.to(device)
 
-        train(self.next_model, self.train_boards, self.train_pis, self.train_values, optimizer=self.next_optimizer, batch_size=64, epochs=100)
+        train(self.next_model, self.train_boards, self.train_pis, self.train_values, optimizer=self.next_optimizer, batch_size=64, epochs=10)
 
         score, _, _, _ = compare_models(self.env, self.next_model, self.cur_model, self.test_games)
 
@@ -163,6 +163,7 @@ def load_checkpoint(filename, model, optimizer):
     model.load_state_dict(checkpoint['state_dict'])
     if 'optimizer' in checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer'])
+    return model
 
 
 def train(model: nn.Module, boards, pis, values, batch_size, epochs, optimizer):
@@ -210,11 +211,13 @@ if __name__=="__main__":
     model2.to(device)
     optimizer = torch.optim.Adam(model1.parameters(), 0.001)
     load_checkpoint("cur_model", model1, optimizer)
-    learner = Learner(ConnectFourEnv(), model1, model2, 0)
+    learner = Learner(ConnectFourEnv(), model1, model2, 5)
     scores = []
     wins = []
     losses = []
     ties = []
+    with open("scores", "rb") as sf:
+        scores, wins, losses, ties = pickle.load(sf)
     while True:
         learner.learn()
         score, win, loss, tie = compare_models(learner.env, learner.cur_model, RandomModel(7), 100)

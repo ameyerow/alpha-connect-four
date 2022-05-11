@@ -11,13 +11,18 @@ class LongConnectFourModel(nn.Module):
 
         self.channels = 64
         self.conv = ConvBlock(self.channels)
-        self.residuals = [ResidualBlock(self.channels) for _ in range(6)]
+        self.r1 = ResidualBlock(self.channels)
+        self.r2 = ResidualBlock(self.channels)
+        self.r3 = ResidualBlock(self.channels)
+        self.r4 = ResidualBlock(self.channels)
+        self.r5 = ResidualBlock(self.channels)
+        self.r6 = ResidualBlock(self.channels)
         self.ph = PolicyHead(self.channels)
         self.vh = ValueHead(self.channels)
 
     def forward(self, X):
         X = self.conv.forward(X)
-        for residual in self.residuals:
+        for residual in [self.r1, self.r2, self.r3, self.r4, self.r5, self.r6]:
             X = residual.forward(X)
         policy = self.ph.forward(X)
         value = self.vh.forward(X)
