@@ -2,7 +2,9 @@ import math
 import numpy as np
 from copy import deepcopy
 from typing import List
-from numpy import ndarray
+from numpy import average, ndarray
+import torch
+import connect_four_env
 from adversarial_env import AdversarialEnv, State
 
 
@@ -161,16 +163,28 @@ class MCTS:
         return action_probs
 
     def value(self) -> float:
-        # TODO: maybe pi * average values of children
-        return self.root_node.total_value / self.root_node.visitation_count
+        """
+        Get the expected value from the current state. 
 
+        return: A float indicating the expected reward from this state.
+        """
+        action_probs = np.zeros(self.env.action_space_shape)
+        average_values = np.zeros(self.env.action_space_shape)
+        child_nodes = self.root_node.children
+        for child_node in child_nodes:
+            action = child_node.action
+            average_values[action] = child_node.total_value / child_node.visitation_count
+            action_probs[action] = child_node.visitation_count
+        prob_sum = np.sum(action_probs)
+        if prob_sum != 0:
+            action_probs /= np.sum(action_probs)
+        return np.dot(average_values, action_probs)
 
 if __name__=="__main__":
-    pass
-    # class MockModel:
-    #     def forward(self, board):
-    #         return [0.25, 0.25, 0.25, 0.25], 0.0001
-    # env = ConnectFourEnv(board_shape=(1, 4), win_req=2)
-    # mcts = MCTS(env, MockModel(), num_simulations=800)
-    # mcts.run()
-    # print(mcts.pi())
+    class MockModel:
+        def forward(self, board):
+            return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=float), 0.0001
+    env = connect_four_env.ConnectFourEnv(board_shape=(1, 4), win_req=2)
+    mcts = MCTS(env, MockModel(), num_simulations=800)
+    mcts.run()
+    print(mcts.value())
