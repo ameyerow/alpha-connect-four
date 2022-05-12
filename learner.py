@@ -14,10 +14,6 @@ import torch.nn as nn
 from random_model import RandomModel
 import pickle
 
-
-device = torch.device("cuda:0")
-
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Learner:
@@ -73,13 +69,14 @@ class Learner:
 
                 return boards, pi, values
 
-    def learn(self):
+    def learn(self, load_train=False):
 
         print("Generating Episodes...")
-        # if len(self.train_boards) == 0:
-        #     with open("new_train", "rb") as tf:
-        #         print("Loading previous training data")
-        #         self.train_boards, self.train_pis, self.train_values = pickle.load(tf)
+        if load_train:
+            if len(self.train_boards) == 0:
+                with open("new_train", "rb") as tf:
+                    print("Loading previous training data")
+                    self.train_boards, self.train_pis, self.train_values = pickle.load(tf)
         for _ in tqdm(range(self.num_episodes)):
             self.env.reset()
             boards, pis, values = self.execute_episode()
@@ -110,9 +107,6 @@ class Learner:
             self.cur_model = self.next_model
             self.cur_optimizer = self.next_optimizer
             print("new model was better with a net game lead of", score, "across", self.test_games, "games")
-            # self.train_boards = []
-            # self.train_values = []
-            # self.train_pis = []
         elif score == 0:
             print("new model was even with old model across", self.test_games, "games")
         else:
@@ -259,7 +253,7 @@ if __name__=="__main__":
     # Uncomment to graph scores; must load saved scores
     # graph_results(scores, wins, losses, ties)
 
-    mode = 'train'
+    mode = 'compare'
     if mode == 'train':
         while True:
             learner.learn()
@@ -273,13 +267,13 @@ if __name__=="__main__":
             print(scores, wins, losses, ties)
     elif mode == 'compare':
         env = ConnectFourEnv()
-        model1 = LongConnectFourModel()
+        model1 = ConnectFourModel()
         optimizer1 = torch.optim.Adam(model1.parameters(), 0.001)
         model2 = ConnectFourModel()
         optimizer2 = torch.optim.Adam(model2.parameters(), 0.001)
         model1.to(device)
         model2.to(device)
-        load_checkpoint("cur_model", model1, optimizer1)
+        load_checkpoint("models/base_best", model1, optimizer1)
         load_checkpoint("models/base_best", model2, optimizer2)
         print(compare_models(env, model1, model2, 100, render=False))
 
