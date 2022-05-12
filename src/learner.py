@@ -267,12 +267,12 @@ def graph_results(scores, wins, losses, ties):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play against a Connect4 model.')
-    parser.add_argument("--train", action="store_true")
+    parser.add_argument("--compare", action="store_true")
     parser.add_argument("--load-checkpoint", type=str, help="Name of checkpoint in the models folder")
     parser.add_argument("--load-saved-scores", action="store_true")
 
     args = parser.parse_args()
-    mode = "train" if args.train else "compare"
+    mode = "compare" if args.compare else "train"
 
     model1 = LongConnectFourModel()
     model2 = LongConnectFourModel()

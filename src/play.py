@@ -48,7 +48,7 @@ class ComputerController(Controller):
         if env.is_terminal_state():
             return ControlType.Computer
 
-        mcts = MCTS(env, self.model)
+        mcts = MCTS(env, self.model, num_simulations=100)
         mcts.run()
         action_probs = mcts.pi()
         action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
@@ -167,15 +167,14 @@ def render(env: AdversarialEnv, control_type: ControlType, screen):
 
 def main():
     parser = argparse.ArgumentParser(description='Play against a Connect4 model.')
-    parser.add_argument("--type", type=str, default="Connect4", help="Either \"Connect4\" or \"Connect2\"")
+    parser.add_argument("--connect2", action="store_true")
     args = parser.parse_args()
-    game_type = args.type
 
     pygame.init()
 
     screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
 
-    if game_type == "Connect2":
+    if args.connect2:
         env = ConnectFourEnv(board_shape=(1, 4), win_req=2)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -183,7 +182,7 @@ def main():
         model.eval()
         checkpoint = torch.load("models/connect2_model", map_location=device)
         model.load_state_dict(checkpoint['state_dict'])
-    elif game_type == "Connect4":
+    else:
         env = ConnectFourEnv()
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
