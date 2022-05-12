@@ -32,7 +32,12 @@ class Learner:
         self.next_optimizer = torch.optim.Adam(next_model.parameters(), 0.001)
         random.seed(0)
 
+
     def execute_episode(self):
+        """
+        :return: (boards, pis, values) of a game played from start to finish. pis supplied by MCTS, values by
+        game termination state.
+        """
         examples = []
         while True:
             current_player = self.env.state.current_player
@@ -70,7 +75,12 @@ class Learner:
                 return boards, pi, values
 
     def learn(self, load_train=False):
-
+        """
+        Uses MCTS to create training episodes for the NN, which is then used for future MCTS runs. Replaces
+        NN only if new NN outperforms old NN
+        :param load_train: load previous training data
+        :return: None
+        """
         print("Generating Episodes...")
         if load_train:
             if len(self.train_boards) == 0:
@@ -106,14 +116,18 @@ class Learner:
         if score > 0:
             self.cur_model = self.next_model
             self.cur_optimizer = self.next_optimizer
-            print("new model was better with a net game lead of", score, "across", self.test_games, "games")
-        elif score == 0:
-            print("new model was even with old model across", self.test_games, "games")
-        else:
-            print("new model was worse with net game losses of", score, "across", self.test_games, "games")
 
 
 def compare_models(env, model1, model2, num_iters, render=False):
+    """
+    Compares two NN in the given environment, where each player goes first num_iters times.
+    :param env: Game environment
+    :param model1: NN
+    :param model2: NN
+    :param num_iters: int
+    :param render: whether to render game board
+    :return: net score, wins, losses, ties
+    """
     print("Comparing models...")
     score = 0
     wins = 0
@@ -162,6 +176,17 @@ def load_checkpoint(filename, model, optimizer):
 
 
 def train(model: nn.Module, boards, pis, values, batch_size, epochs, optimizer):
+    """
+    Trains the NN
+    :param model: NN
+    :param boards: boards (always player 1 about to move, achieved by multiplying board by player about to move)
+    :param pis: move probabilities from MCTS
+    :param values: value from game termination state
+    :param batch_size: batch size
+    :param epochs: epochs to train over
+    :param optimizer: optimizer
+    :return: None
+    """
     boards = np.array(boards)
     pis = np.array(pis)
     values = np.array(values)
