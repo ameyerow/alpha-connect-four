@@ -15,6 +15,7 @@ from big_connect_four_model import BigConnectFourModel
 from connect_four_env import ConnectFourEnv
 from connect_two_model import ConnectTwoModel
 from connect_four_model import ConnectFourModel
+from monte_carlo_tree_search import MCTS
 
 
 SCREEN_SIZE = 512
@@ -46,16 +47,10 @@ class ComputerController(Controller):
         if env.is_terminal_state():
             return ControlType.Computer
 
-        action_probs, _ = self.model.forward(env.observation())
-        action_probs = action_probs.squeeze().detach().cpu().numpy()
-        def zero_out_impossible_moves(action, action_prob):
-            return action_prob if env.is_legal_action(action) else 0
-        action_probs = np.array([zero_out_impossible_moves(action, action_prob) 
-            for action, action_prob in enumerate(action_probs)])
-        action_probs /= np.sum(action_probs)
+        mcts = MCTS(env, self.model)
+        mcts.run()
+        action_probs = mcts.pi()
         action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
-
-        sleep(1)
         env.step(action)
 
         if env.is_terminal_state():
@@ -69,14 +64,12 @@ class PlayerController(Controller):
         new_control_type: ControlType = None
         mouse_pos = pygame.mouse.get_pos()
         pygame.mouse.get_pressed()
-        print(mouse_pos)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: 
                 sys.exit()
 
         if pygame.mouse.get_pressed()[0]:
-            print("In Player's handle_events", mouse_pos) 
             action = self.get_action_from_click(mouse_pos, env)
             if action is not None:
                 env.step(action)

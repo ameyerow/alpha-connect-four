@@ -231,7 +231,7 @@ def graph_results(scores, wins, losses, ties):
     losses = np.array(losses)
     ties = np.array(ties)
 
-    figure, axis = plt.subplots(2, 2)
+    _, axis = plt.subplots(2, 2)
 
     axis[0, 0].plot(X, scores)
     axis[0, 0].set_title("Net Scores")
