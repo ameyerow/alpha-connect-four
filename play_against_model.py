@@ -14,6 +14,7 @@ from adversarial_env import AdversarialEnv
 from big_connect_four_model import BigConnectFourModel
 from connect_four_env import ConnectFourEnv
 from connect_two_model import ConnectTwoModel
+from connect_four_model import ConnectFourModel
 
 
 SCREEN_SIZE = 512
@@ -187,9 +188,10 @@ def main():
         env = ConnectFourEnv()
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = BigConnectFourModel()
+        model = ConnectFourModel()
+        model.to(device)
         model.eval()
-        checkpoint = torch.load("models/best_big_connect_four_model", map_location=device)
+        checkpoint = torch.load("models/base_best", map_location=device)
         model.load_state_dict(checkpoint['state_dict'])
 
     starting_control_types = [ControlType.Player, ControlType.Computer]
