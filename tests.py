@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from adversarial_env import State
 from connect_four_env import ConnectFourEnv
-from monte_carlo_tree_search import Node, MCTS, UCB1
+from monte_carlo_tree_search import MCTS
 
 
 class MCTSTests(unittest.TestCase):

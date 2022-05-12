@@ -1,17 +1,16 @@
 import abc
 import sys
-from typing import Dict, List, Tuple
-import numpy as np
-from numpy import ndarray
-from enum import Enum
-from overrides import overrides
-import pygame
 import torch
 import random
+import pygame
+import argparse
+import numpy as np
+from enum import Enum
 from time import sleep
+from overrides import overrides
+from typing import Dict, List, Tuple
 
 from adversarial_env import AdversarialEnv
-from big_connect_four_model import BigConnectFourModel
 from connect_four_env import ConnectFourEnv
 from connect_two_model import ConnectTwoModel
 from connect_four_model import ConnectFourModel
@@ -42,6 +41,8 @@ class ComputerController(Controller):
     def handle_events(self, env: AdversarialEnv) -> ControlType:
         for event in pygame.event.get():
             if event.type == pygame.QUIT: 
+                pygame.display.quit()
+                pygame.quit()
                 sys.exit()
             
         if env.is_terminal_state():
@@ -67,6 +68,8 @@ class PlayerController(Controller):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: 
+                pygame.display.quit()
+                pygame.quit()
                 sys.exit()
 
         if pygame.mouse.get_pressed()[0]:
@@ -163,7 +166,10 @@ def render(env: AdversarialEnv, control_type: ControlType, screen):
 
 
 def main():
-    game_type = "Connect4"
+    parser = argparse.ArgumentParser(description='Play against a Connect4 model.')
+    parser.add_argument("--type", type=str, default="Connect4", help="Either \"Connect4\" or \"Connect2\"")
+    args = parser.parse_args()
+    game_type = args.type
 
     pygame.init()
 

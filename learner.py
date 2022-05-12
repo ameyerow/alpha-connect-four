@@ -50,7 +50,6 @@ class Learner:
             for action in range(len(pi)):
                 if not self.env.is_legal_action(action):
                     pi[action] = 0
-            prob_sum = np.sum(pi)
             pi /= np.sum(pi)
 
             action = np.random.choice(len(pi), p=pi)
