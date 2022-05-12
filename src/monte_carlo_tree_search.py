@@ -5,8 +5,7 @@ from typing import List
 from numpy import ndarray
 from copy import deepcopy
 
-import connect_four_env
-from adversarial_env import AdversarialEnv, State
+from .env.adversarial_env import AdversarialEnv, State
 
 
 class Node:
@@ -180,12 +179,3 @@ class MCTS:
         if prob_sum != 0:
             action_probs /= np.sum(action_probs)
         return np.dot(average_values, action_probs)
-
-if __name__=="__main__":
-    class MockModel:
-        def forward(self, board):
-            return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=float), 0.0001
-    env = connect_four_env.ConnectFourEnv(board_shape=(1, 4), win_req=2)
-    mcts = MCTS(env, MockModel(), num_simulations=800)
-    mcts.run()
-    print(mcts.value())

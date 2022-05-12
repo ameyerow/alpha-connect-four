@@ -1,16 +1,18 @@
-from sre_parse import State
+import torch
 import unittest
 import numpy as np
-import torch
-from adversarial_env import State
-from connect_four_env import ConnectFourEnv
-from monte_carlo_tree_search import MCTS
+
+from .monte_carlo_tree_search import MCTS
+from .env.adversarial_env import State
+from .env.connect_four_env import ConnectFourEnv
 
 
 class MCTSTests(unittest.TestCase):
 
     def test_mcts_from_root_with_equal_priors(self):
         class MockModel:
+            def eval(self):
+                pass
             def forward(self, board):
                 return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=float), 0.0001
 
@@ -24,6 +26,8 @@ class MCTSTests(unittest.TestCase):
 
     def test_mcts_from_second_move(self):
         class MockModel:
+            def eval(self):
+                pass
             def forward(self, board):
                 return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=float), 0.0001
 
@@ -38,6 +42,8 @@ class MCTSTests(unittest.TestCase):
     
     def test_mcts_from_flipped_second_move(self):
         class MockModel:
+            def eval(self):
+                pass
             def forward(self, board):
                 return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=float), 0.0001
 
@@ -52,6 +58,8 @@ class MCTSTests(unittest.TestCase):
 
     def test_mcts_winning_move(self):
         class MockModel:
+            def eval(self):
+                pass
             def forward(self, board):
                 return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=float), 0.0001
 

@@ -1,12 +1,13 @@
-from typing import Any, Tuple
+import torch
 import numpy as np
 from enum import Enum
 from time import sleep
-from overrides import overrides
 from numpy import ndarray
-from adversarial_env import AdversarialEnv, State
-import torch
-from monte_carlo_tree_search import MCTS
+from typing import Any, Tuple
+from overrides import overrides
+
+from .adversarial_env import AdversarialEnv, State
+from ..monte_carlo_tree_search import MCTS
 
 
 class ConnectFourEnv(AdversarialEnv):

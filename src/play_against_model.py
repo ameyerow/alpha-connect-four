@@ -10,11 +10,11 @@ from time import sleep
 from overrides import overrides
 from typing import Dict, List, Tuple
 
-from adversarial_env import AdversarialEnv
-from connect_four_env import ConnectFourEnv
-from connect_two_model import ConnectTwoModel
-from connect_four_model import ConnectFourModel
-from monte_carlo_tree_search import MCTS
+from .env.adversarial_env import AdversarialEnv
+from .env.connect_four_env import ConnectFourEnv
+from .models.connect_two_model import ConnectTwoModel
+from .models.connect_four_model import ConnectFourModel
+from .monte_carlo_tree_search import MCTS
 
 
 SCREEN_SIZE = 512

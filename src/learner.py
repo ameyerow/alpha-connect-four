@@ -1,18 +1,22 @@
-import numpy as np
+import os
 import torch
+import pickle
+import random
+import argparse
+import numpy as np
+import torch.nn as nn
 from tqdm import tqdm
 from matplotlib import pyplot as plt
-from adversarial_env import AdversarialEnv, State
-from connect_four_env import ConnectFourEnv
-from connect_two_model import ConnectTwoModel
-from monte_carlo_tree_search import MCTS
-from connect_four_model import ConnectFourModel
-from big_connect_four_model import BigConnectFourModel
-from long_connect_four_model import LongConnectFourModel
-import random
-import torch.nn as nn
-from random_model import RandomModel
-import pickle
+
+from .monte_carlo_tree_search import MCTS
+from .models.random_model import RandomModel
+from .env.connect_four_env import ConnectFourEnv
+from .models.connect_two_model import ConnectTwoModel
+from .models.connect_four_model import ConnectFourModel
+from .env.adversarial_env import AdversarialEnv, State
+from .models.big_connect_four_model import BigConnectFourModel
+from .models.long_connect_four_model import LongConnectFourModel
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -253,31 +257,42 @@ def graph_results(scores, wins, losses, ties):
 
     from datetime import datetime
     dt = str(datetime.now()).replace(" ", "-")[-6:-1]
+
+    if not os.path.exists('results/'):
+        os.makedirs('results/')
+
     plt.savefig(f'results/{dt}.png')
     plt.show()
 
 
 if __name__=="__main__":
+    parser = argparse.ArgumentParser(description='Play against a Connect4 model.')
+    parser.add_argument("--train", action="store_true")
+    parser.add_argument("--load-checkpoint", type=str, help="Name of checkpoint in the models folder")
+    parser.add_argument("--load-saved-scores", action="store_true")
+
+    args = parser.parse_args()
+    mode = "train" if args.train else "compare"
+
     model1 = LongConnectFourModel()
     model2 = LongConnectFourModel()
     model1.to(device)
     model2.to(device)
     optimizer = torch.optim.Adam(model1.parameters(), 0.001)
-    # Uncomment to load a saved checkpoint
-    # load_checkpoint("models/long_best", model1, optimizer)
+    # Load a saved checkpoint
+    if args.load_checkpoint is not None:
+        load_checkpoint(f"models/{args.load_checkpoint}", model1, optimizer)
     learner = Learner(ConnectFourEnv(), model1, model2, 10)
     scores = []
     wins = []
     losses = []
     ties = []
-    # Uncomment to load saved scores
-    # with open("scores", "rb") as sf:
-    #     scores, wins, losses, ties = pickle.load(sf)
+    # Load saved scores
+    if args.load_saved_scores:
+        with open("scores", "rb") as sf:
+            scores, wins, losses, ties = pickle.load(sf)
+        graph_results(scores, wins, losses, ties)
 
-    # Uncomment to graph scores; must load saved scores
-    # graph_results(scores, wins, losses, ties)
-
-    mode = 'compare'
     if mode == 'train':
         while True:
             learner.learn()
@@ -299,7 +314,8 @@ if __name__=="__main__":
         model2.to(device)
         load_checkpoint("models/base_best", model1, optimizer1)
         load_checkpoint("models/base_best", model2, optimizer2)
-        print(compare_models(env, model1, model2, 100, render=False))
+        score, win, loss, tie = compare_models(env, model1, model2, 100, render=False)
+        print(score, win, loss, tie)
 
 
 

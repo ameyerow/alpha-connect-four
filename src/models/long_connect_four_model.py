@@ -2,7 +2,8 @@ import torch
 import numpy as np
 from torch import nn
 
-device = torch.device("cuda:0")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class LongConnectFourModel(nn.Module):
 
@@ -32,9 +33,9 @@ class LongConnectFourModel(nn.Module):
 class ConvBlock(nn.Module):
     def __init__(self, out_channels):
         super().__init__()
-        self.conv = torch.nn.Conv2d(1, out_channels=out_channels, kernel_size=(3, 3), stride=(1, 1), padding='same').to(device)
-        self.bn = torch.nn.BatchNorm2d(out_channels).to(device)
-        self.relu = torch.nn.ReLU().to(device)
+        self.conv = torch.nn.Conv2d(1, out_channels=out_channels, kernel_size=(3, 3), stride=(1, 1), padding='same')
+        self.bn = torch.nn.BatchNorm2d(out_channels)
+        self.relu = torch.nn.ReLU()
 
     def forward(self, X):
         X = np.reshape(X, (-1, 1, 6, 7))
@@ -48,10 +49,10 @@ class ConvBlock(nn.Module):
 class ResidualBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
-        self.conv1 = torch.nn.Conv2d(channels, out_channels=channels, kernel_size=(3, 3), stride=(1, 1), padding='same').to(device)
-        self.bn = torch.nn.BatchNorm2d(channels).to(device)
-        self.relu = torch.nn.ReLU().to(device)
-        self.conv2 = torch.nn.Conv2d(channels, out_channels=channels, kernel_size=(3, 3), stride=(1, 1), padding='same').to(device)
+        self.conv1 = torch.nn.Conv2d(channels, out_channels=channels, kernel_size=(3, 3), stride=(1, 1), padding='same')
+        self.bn = torch.nn.BatchNorm2d(channels)
+        self.relu = torch.nn.ReLU()
+        self.conv2 = torch.nn.Conv2d(channels, out_channels=channels, kernel_size=(3, 3), stride=(1, 1), padding='same')
 
     def forward(self, X):
         outputs = self.conv1(X)
@@ -66,12 +67,12 @@ class ResidualBlock(nn.Module):
 class PolicyHead(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-        self.conv = torch.nn.Conv2d(in_channels, out_channels=2, kernel_size=(1, 1), stride=(1, 1)).to(device)
-        self.bn = torch.nn.BatchNorm2d(2).to(device)
-        self.relu = torch.nn.ReLU().to(device)
-        self.flatten = torch.nn.Flatten().to(device)
-        self.linear = torch.nn.Linear(84, 7).to(device)
-        self.softmax = torch.nn.Softmax(dim=1).to(device)
+        self.conv = torch.nn.Conv2d(in_channels, out_channels=2, kernel_size=(1, 1), stride=(1, 1))
+        self.bn = torch.nn.BatchNorm2d(2)
+        self.relu = torch.nn.ReLU()
+        self.flatten = torch.nn.Flatten()
+        self.linear = torch.nn.Linear(84, 7)
+        self.softmax = torch.nn.Softmax(dim=1)
 
     def forward(self, X):
         X = self.conv(X)
@@ -86,13 +87,13 @@ class PolicyHead(nn.Module):
 class ValueHead(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-        self.conv = torch.nn.Conv2d(in_channels, out_channels=1, kernel_size=(1, 1), stride=(1, 1)).to(device)
-        self.bn = torch.nn.BatchNorm2d(1).to(device)
-        self.relu = torch.nn.ReLU().to(device)
-        self.flatten = torch.nn.Flatten().to(device)
-        self.linear1 = torch.nn.Linear(42, 256).to(device)
-        self.linear2 = torch.nn.Linear(256, 1).to(device)
-        self.tanh = torch.nn.Tanh().to(device)
+        self.conv = torch.nn.Conv2d(in_channels, out_channels=1, kernel_size=(1, 1), stride=(1, 1))
+        self.bn = torch.nn.BatchNorm2d(1)
+        self.relu = torch.nn.ReLU()
+        self.flatten = torch.nn.Flatten()
+        self.linear1 = torch.nn.Linear(42, 256)
+        self.linear2 = torch.nn.Linear(256, 1)
+        self.tanh = torch.nn.Tanh()
 
     def forward(self, X):
         X = self.conv(X)
