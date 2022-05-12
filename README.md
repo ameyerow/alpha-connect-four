@@ -25,7 +25,7 @@ python -m src.learner
 
 # Playing
 
-To play against a trained model, active the environment and run `play.py`.
+To play against a trained model, activate the environment and run `play.py`.
 ```
 pipenv shell
 python -m src.play
@@ -38,7 +38,7 @@ Highlighted blue circles in the environment represent legal action, click on the
 
 # Training
 
-To train model, active the environment and run `learner.py`.
+To train model, activate the environment and run `learner.py`.
 ```
 pipenv shell
 python -m src.learner
