@@ -62,11 +62,12 @@ class ComputerController(Controller):
 
 class AlphaBetaController(Controller):
 
-    def __init__(self):
-        self.bot = StudentBot()
+    def __init__(self, cutoff):
+        self.bot = StudentBot(cutoff)
 
     @overrides
     def handle_events(self, env: AdversarialEnv) -> ControlType:
+        sleep(1)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.display.quit()
@@ -76,7 +77,8 @@ class AlphaBetaController(Controller):
         if env.is_terminal_state():
             return ControlType.Computer
 
-        action = self.bot.decide(env)
+        action_probs = self.bot.decide(env)
+        action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
         env.step(action)
         if env.is_terminal_state():
             return ControlType.Restart
@@ -223,7 +225,7 @@ def main():
 
     controllers: Dict[ControlType, Controller] = {}
     controllers[ControlType.Player] = PlayerController()
-    controllers[ControlType.Computer] = ComputerController(model)
+    controllers[ControlType.Computer] = AlphaBetaController(3)
     controllers[ControlType.Restart] = RestartController()
     
     while True:

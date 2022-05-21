@@ -40,7 +40,8 @@ def ply_backup(node):
 
 
 class StudentBot:
-    """ Write your student bot here"""
+    def __init__(self, cutoff):
+        self.cutoff = cutoff
 
     def decide(self, asp: AdversarialEnv):
         """
@@ -50,7 +51,7 @@ class StudentBot:
         To get started, you can get the current
         state by calling asp.get_start_state()
         """
-        return self.alpha_beta_cutoff(asp, 1, self.eval_func)
+        return self.alpha_beta_cutoff(asp, self.cutoff, self.eval_func)
 
     def alpha_beta_cutoff(self, asp: AdversarialEnv, cutoff_ply, eval_func):
         """
@@ -115,7 +116,9 @@ class StudentBot:
                 for action in reversed(actions_list):
                     next_node = Node(parent=node, parent_to_node_action=action, ply=node.ply+1)
                     node_stack.put(next_node)
-        return start_node.best_child_action
+        action = np.zeros(asp.action_space_shape)
+        action[start_node.best_child_action] = 1
+        return action
 
     def eval_func(self, state):
         random_score = random.uniform(0.4, 0.6)
