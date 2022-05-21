@@ -10,11 +10,12 @@ from time import sleep
 from overrides import overrides
 from typing import Dict, List, Tuple
 
-from .env.adversarial_env import AdversarialEnv
-from .env.connect_four_env import ConnectFourEnv
-from .models.connect_two_model import ConnectTwoModel
-from .models.connect_four_model import ConnectFourModel
-from .monte_carlo_tree_search import MCTS
+from src.env.adversarial_env import AdversarialEnv
+from src.env.connect_four_env import ConnectFourEnv
+from src.alphabeta import StudentBot
+from src.models.connect_two_model import ConnectTwoModel
+from src.models.connect_four_model import ConnectFourModel
+from src.monte_carlo_tree_search import MCTS
 
 
 SCREEN_SIZE = 512
@@ -54,6 +55,29 @@ class ComputerController(Controller):
         action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
         env.step(action)
 
+        if env.is_terminal_state():
+            return ControlType.Restart
+        else:
+            return ControlType.Player
+
+class AlphaBetaController(Controller):
+
+    def __init__(self):
+        self.bot = StudentBot()
+
+    @overrides
+    def handle_events(self, env: AdversarialEnv) -> ControlType:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.display.quit()
+                pygame.quit()
+                sys.exit()
+
+        if env.is_terminal_state():
+            return ControlType.Computer
+
+        action = self.bot.decide(env)
+        env.step(action)
         if env.is_terminal_state():
             return ControlType.Restart
         else:
@@ -180,7 +204,7 @@ def main():
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = ConnectTwoModel()
         model.eval()
-        checkpoint = torch.load("models/connect2_model", map_location=device)
+        checkpoint = torch.load("../models/connect2_model", map_location=device)
         model.load_state_dict(checkpoint['state_dict'])
     else:
         env = ConnectFourEnv()
@@ -189,7 +213,7 @@ def main():
         model = ConnectFourModel()
         model.to(device)
         model.eval()
-        checkpoint = torch.load("models/base_best", map_location=device)
+        checkpoint = torch.load("../models/base_best", map_location=device)
         model.load_state_dict(checkpoint['state_dict'])
 
     starting_control_types = [ControlType.Player, ControlType.Computer]

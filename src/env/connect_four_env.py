@@ -220,6 +220,22 @@ class ConnectFourEnv(AdversarialEnv):
         self.clock.tick(self.metadata["render_fps"])
         pygame.event.get()
 
+    @overrides
+    def evaluate_state(self, state: State):
+        if not self.is_terminal_state(state):
+            return [0.5, 0.5]
+        else:
+            if self.__check_victory(state) == 1:
+                return [1, 0]
+            elif self.__check_victory(state) == 0:
+                return [0.5, 0.5]
+            elif self.__check_victory(state) == -1:
+                return [0, 1]
+
+    @overrides
+    def get_available_actions(self, state: State):
+        return self.__get_allowed_moves(state).tolist()
+
     # returns winning player where player is as represented in the __board. Player is None if
     # there is no winner
     def __check_victory(self, state: State):

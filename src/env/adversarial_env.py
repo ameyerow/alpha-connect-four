@@ -125,3 +125,21 @@ class AdversarialEnv(metaclass=abc.ABCMeta):
             environment.
         """
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def evaluate_state(self, state: State):
+        """
+        Evaluates a state and returns a list of rewards, with the first reward for player 1, the second for player 2 etc
+        :param state: The state to be evaluated.
+        :return: Returns a list of rewards, with the first reward for player 1, the second for player 2 etc
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_available_actions(self, state: State):
+        """
+        Evaluates a state and returns a list of available actions
+        :param state: The state to be evaluated.
+        :return: Returns a list of available actions
+        """
+        raise NotImplementedError
