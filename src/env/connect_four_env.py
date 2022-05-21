@@ -5,6 +5,7 @@ from time import sleep
 from numpy import ndarray
 from typing import Any, Tuple
 from overrides import overrides
+from torch import nn
 
 from .adversarial_env import AdversarialEnv, State
 from ..monte_carlo_tree_search import MCTS
@@ -60,8 +61,11 @@ class ConnectFourEnv(AdversarialEnv):
             if render:
                 print(state.board)
             current_player = players[state.current_player]
-            action_probs, _ = current_player.forward(self.observation(state=state))
-            action_probs = action_probs.squeeze().detach().cpu().numpy()
+            if isinstance(current_player, nn.Module):
+                action_probs, _ = current_player.forward(self.observation(state=state))
+                action_probs = action_probs.squeeze().detach().cpu().numpy()
+            else:
+                action_probs = current_player.decide(self)
             # Balance probabilities based on some actions being illegal
             def zero_out_impossible_moves(action, action_prob):
                 return action_prob if self.is_legal_action(action, state=state) else 0

@@ -8,14 +8,15 @@ import torch.nn as nn
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 
-from .monte_carlo_tree_search import MCTS
-from .models.random_model import RandomModel
-from .env.connect_four_env import ConnectFourEnv
-from .models.connect_two_model import ConnectTwoModel
-from .models.connect_four_model import ConnectFourModel
-from .env.adversarial_env import AdversarialEnv, State
-from .models.big_connect_four_model import BigConnectFourModel
-from .models.long_connect_four_model import LongConnectFourModel
+from src.monte_carlo_tree_search import MCTS
+from src.models.random_model import RandomModel
+from src.env.connect_four_env import ConnectFourEnv
+from src.models.connect_two_model import ConnectTwoModel
+from src.models.connect_four_model import ConnectFourModel
+from src.env.adversarial_env import AdversarialEnv, State
+from src.models.big_connect_four_model import BigConnectFourModel
+from src.models.long_connect_four_model import LongConnectFourModel
+from src.alphabeta import StudentBot
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -264,6 +265,22 @@ def graph_results(scores, wins, losses, ties):
     plt.savefig(f'results/{dt}.png')
     plt.show()
 
+class MCTSModel:
+
+    def __init__(self, model, num_simulations):
+        self.model = model
+        self.num_simulations = num_simulations
+
+    def decide(self, env):
+        temp_env = ConnectFourEnv()
+        temp_env.state = State(env.state.board.copy(), env.state.current_player)
+        mcts = MCTS(temp_env, self.model, num_simulations=self.num_simulations)
+        mcts.run()
+        action_probs = mcts.pi()
+        return action_probs
+
+    def eval(self):
+        pass
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play against a Connect4 model.')
@@ -312,9 +329,9 @@ if __name__=="__main__":
         optimizer2 = torch.optim.Adam(model2.parameters(), 0.001)
         model1.to(device)
         model2.to(device)
-        load_checkpoint("models/base_best", model1, optimizer1)
-        load_checkpoint("models/base_best", model2, optimizer2)
-        score, win, loss, tie = compare_models(env, model1, model2, 100, render=False)
+        load_checkpoint("../models/base_best", model1, optimizer1)
+        load_checkpoint("../models/base_best", model2, optimizer2)
+        score, win, loss, tie = compare_models(env, MCTSModel(model1, 20), StudentBot(1), 100, render=False)
         print(score, win, loss, tie)
 
 

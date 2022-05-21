@@ -53,6 +53,9 @@ class StudentBot:
         """
         return self.alpha_beta_cutoff(asp, self.cutoff, self.eval_func)
 
+    def eval(self):
+        pass
+
     def alpha_beta_cutoff(self, asp: AdversarialEnv, cutoff_ply, eval_func):
         """
         This function should:
