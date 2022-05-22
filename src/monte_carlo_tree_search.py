@@ -125,6 +125,15 @@ class MCTS:
         self.num_simulations = num_simulations
         self.root_node = Node(None, None, 1, self.env.state)
 
+    def step(self, action):
+        for child in self.root_node.children:
+            if child.action == action:
+                child.parent = None
+                child.action = None
+                child.prior = 1
+                self.root_node = child
+                return
+
     def run(self):
         for i in range(self.num_simulations):
             # Find a leaf node
